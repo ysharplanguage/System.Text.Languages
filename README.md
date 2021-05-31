@@ -1,5 +1,5 @@
 # System.Text.Languages
-May 30, 2021
+May 31, 2021
 
 ## An experiment in minimalism for interpreters of LISP-ish languages
 (in about 200 lines of C#)
@@ -53,11 +53,20 @@ There are exactly 8 language builtins (aka "core symbols") common to all LISP-is
 - **`Let`** is the "**`let`**" binding keyword, used to define bindings from symbols to values in lexical scopes
 - **`Lambda`** is the "**`=>`**" lambda abstraction keyword, used to define first-class anonymous functions, playing the same role as lambda abstractions in lambda calculus
 
-Both **`params`** and **`this`** are optionally defined *semantically* in the sense that it is the responsibility of an implementation of [**`IEvaluator`**](#interface-ievaluator) to decide whether a specific semantics is attached to them or not.
+Both **`Params`** and **`This`** are optionally defined *semantically* in the sense that it is the responsibility of an implementation of [**`IEvaluator`**](#interface-ievaluator) to decide whether a specific semantics is attached to them or not.
+
+Obviously, if either or both of **`Params`** and **`This`** is/are optional, there won't be any need to have **`ISymbolProvider`** assign it/them the corresponding literal(s) either, although their unused **`Index`** will still remain unusable for anything else.
 
 Symbols are just that: atoms which intern multiple occurrences of the same literals, be they builtins or programmer-defined identifiers.
 
 They do not know (nor does the implementation **`ISymbolProvider`** either) to which actual values and/or semantics they are attached to, at any particular point in time of the parsing or evaluation phases - this knowledge being the sole responsibility of an implementation of [**`IEnvironment`**](#interface-ienvironment).
+
+Finally, note that not all "seemingly atomic" literals of the target language being represented are good candidates / suitable to have a **`Symbol`** attached to them, even as programmer-written only ones:
+numeric constants such as "**`1776`**" or string literals such as " **`"Hello, world!"`** " aren't actually atomic from the **`ISymbolProvider`** implementer's standpoint.
+Both of these are in fact composite constructs for the latter (of a presumed integral type represented in base 10 and of a character string type whose delimeter happens to be the double quote, resp.)
+which are interpretable as constants only relatively to the host language, per se, of the implementation of **`ISymbolProvider`**, but arguably not relatively to that very implementation.
+
+In the first case, indeed it wouldn't make much sense (at all) to try denoting a distinct **`Symbol`** of the target language for each and every of the concrete values of the ambient `**System.Int32**` type directly coming from the CLR-based host language.
 
 ```
 public class Symbol
