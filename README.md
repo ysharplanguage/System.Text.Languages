@@ -66,7 +66,7 @@ numeric constants such as "**`1776`**" or string literals such as " **`"Hello, w
 Both of these are in fact composite constructs for the latter (of a presumed integral type represented in base 10 and of a character string type whose delimeter happens to be the double quote, resp.)
 which are interpretable as constants only relatively to the host language, per se, of the implementation of **`ISymbolProvider`**, but arguably not relatively to that very implementation.
 
-In the first case, indeed it wouldn't make much sense (at all) to try denoting a distinct **`Symbol`** of the target language for each and every of the concrete values of the ambient `**System.Int32**` type directly coming from the CLR-based host language.
+In the first case, indeed it wouldn't make much sense (at all) to try denoting a distinct **`Symbol`** of the target language for each and every of the concrete values of the ambient **`System.Int32`** type directly coming from the CLR-based host language.
 
 ```
 public class Symbol
