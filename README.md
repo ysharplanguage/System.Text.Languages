@@ -1,15 +1,12 @@
 # System.Text.Languages
-
-May 31, 2021
+May 30, 2021
 
 ## An experiment in minimalism for interpreters of LISP-ish languages
-
 (in about 200 lines of C#)
 
 ***
 
 ### Table of contents
-
 - [API](#api) (complete source: [Namespace.cs](#namespacecs-50-lines))
   - [Symbol](#class-symbol) class
   - [ISymbolProvider](#interface-isymbolprovider) interface
@@ -35,7 +32,6 @@ May 31, 2021
 ## API
 
 ### class Symbol
-
 A **`Symbol`** interns all the literal occurrences that denote it, during both parsing and evaluation of the final S-expression.
 
 Examples may include the "**`true`**" and "**`false`**" boolean constants, or the "**`null`**" special value, or arithmetic operators such as "**`+`**", etc.
@@ -50,8 +46,8 @@ There are exactly 8 language builtins common to all LISP-ish languages, 2 of whi
 - **`Unknown`** is the "unknown symbol" which can be used to signal an unexpected character during parsing and/or an undefined identifier during evaluation
 - **`Open`** (resp. **`Close`** ) is the open (resp. close) parenthesis, used to build non-atomic S-expressions
 - **`Quote`** is the quote symbol, used to build complex, unevaluated S-expressions, eg, for representations in "code as data" scenarios
-- **`Params`** is the optional "**`params`**" keyword, whose role could be the same as JavaScript's "**`arguments`**"
-- **`This`** is the optional "**`this`**" keyword, whose role could be the same as C++/Java/JavaScript/C#'s "**`this`**"
+- **`Params`** is the optional "**`params`**" keyword, whose role could be similar to JavaScript's "**`arguments`**"
+- **`This`** is the optional "**`this`**" keyword, whose role could be similar to C++/Java/JavaScript/C#'s "**`this`**"
 - **`Let`** is the "**`let`**" binding keyword, used to define bindings from symbols to values in lexical scopes
 - **`Lambda`** is the "**`=>`**" lambda abstraction keyword, used to define first-class anonymous functions, playing the same role as lambda abstractions in lambda calculus
 
@@ -59,13 +55,13 @@ Both **`params`** and **`this`** are optionally defined *semantically* in the se
 
 Symbols are just that: atoms which intern multiple occurrences of the same literals, be they builtins or programmer-defined identifiers.
 
-They do not know (nor does the implementation [**`ISymbolProvider`**](#interface-isymbolprovider) either) to which actual values and/or semantics they are attached to, at any particular point in time of the parsing or evaluation phases - this knowledge being the sole responsibility of an implementation of [**`IEnvironment`**](#interface-ienvironment).
+They do not know (nor does the implementation **`ISymbolProvider`** either) to which actual values and/or semantics they are attached to, at any particular point in time of the parsing or evaluation phases - this knowledge being the sole responsibility of an implementation of [**`IEnvironment`**](#interface-ienvironment).
 
 ```
 public class Symbol
 {
-    public static readonly
-        Symbol Unknown = new Symbol(0),
+    public static readonly Symbol
+        Unknown = new Symbol(0),
         Open = new Symbol(-1),
         Close = new Symbol(-2),
         Quote = new Symbol(-3),
@@ -82,6 +78,26 @@ public class Symbol
 ```
 
 ### interface ISymbolProvider
+**`ISymbolProvider`** is the contract for a bidirectional (ie, bijective and invertible) and mutable mapping between symbols and the literals that denote them.
+The mutation of the mapping defined by an implementation of **`ISymbolProvider`** is append-only: one can only "append" a new bidirectional link between a [**`Symbol`**](#class-symbol) and the literal that denotes it.
+In other words, one cannot change the literal that denotes a symbol already known to the **`ISymbolProvider`**, nor one can change the symbol denotated by a literal already known to the same.
+The use of **`ISymbolProvider`** will fall into either one of two cases:
+
+- during the ***initialization*** phase of a parser or evaluator, an implementation of **`ISymbolProvider`** is populated with all the bidirectional links of the language's builtin symbols and their corresponding literals;
+such symbols will have their **`Index`** growing "downward" in the negative integers
+- during the ***utilization*** phase of a parser or evaluator, the same implementation of **`ISymbolProvider`** can be used to either append a new bidirectional link between a programmer-defined symbol and its literal encountered for the first time, or to retrieve an already known symbol or literal (be it a builtin or not);
+new programmer-defined symbols will have their **`Index`** growing "upward" in the (strictly) positive integers
+
+Ideally, an implementation of **`ISymbolProvider`** should be the only piece of mutable state injected into (and owned by) an implementation of [**`ILanguage`**](#interface-ilanguage) or [**`IEvaluator`**](#interface-ievaluator) at construction time of the latter.
+Thus, a thread-safe implementation of **`ISymbolProvider`** could - possibly, but not necessarily - allow to make its owning **`ILanguage`** or **`IEvaluator`** thread-safe as well, while a non-thread-safe implementation of the former will ***necessarily*** make the latter non-thread-safe.
+
+The **`ISymbolProvider`** contract's rationale is as follows:
+
+- the method **`bool Contains(string literal)`** is for the client to know whether a specific literal already denotes a symbol or not (be it a builtin or programmer-defined one)
+- the method **`ISymbolProvider Include(string literal, out Symbol symbol, bool asBuiltin)`** is for the client to retrieve a specific symbol through its corresponding literal, after ensuring the bidirectional link between the two has been appended, if necessary and according to the (optional) **`asBuiltin`** hint; note the method's signature enables the client to make chained calls into the same (current) implementation of **`ISymbolProvider`** to define or retrieve multiple symbols "at once"
+- the method **`Symbol Symbol(string literal, bool asBuiltin)`** has the same semantics as the **`Include`** method, but isn't chainable and instead directly returns the symbol of interest through its corresponding literal and (optional) **`asBuiltin`** hint
+- the method **`string NameOf(Symbol symbol)`** is for the client to retrieve the specific literal which denotes a given symbol, under the assumption that the bidirectional link between the two ***must*** already exist
+
 ```
 public interface ISymbolProvider
 {
@@ -324,11 +340,9 @@ public class Evaluator : IEvaluator
 ```
 
 ## Deriving a sample interpreter
-
 TBC...
 
 ## A more advanced example
-
 TBC...
 
 ## Complete sources
@@ -549,5 +563,4 @@ NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
 ```
 
 ## Contact info
-
 ysharp [dot] design {at} gmail (dot) com
