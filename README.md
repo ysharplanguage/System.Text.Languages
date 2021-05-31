@@ -104,10 +104,10 @@ Thus, a thread-safe implementation of **`ISymbolProvider`** could - possibly, bu
 
 The **`ISymbolProvider`** contract's rationale is as follows:
 
-- the method **`bool Contains(string literal)`** is for the client to determine whether a specific literal already denotes a symbol or not (be it a builtin or programmer-defined one)
-- the method **`ISymbolProvider Include(string literal, out Symbol symbol, bool asBuiltin)`** is for the client to retrieve a specific symbol through its corresponding literal, after ensuring the bidirectional link between the two has been appended, if necessary and according to the (optional) **`asBuiltin`** hint; note the method's signature enables the client to make chained calls into the same (current) implementation of **`ISymbolProvider`** to define or retrieve multiple symbols "at once"
-- the method **`Symbol Symbol(string literal, bool asBuiltin)`** has the same semantics as the **`Include`** method, but isn't chainable and instead directly returns the symbol of interest through its corresponding literal and (optional) **`asBuiltin`** hint
-- the method **`string NameOf(Symbol symbol)`** is for the client to retrieve the specific literal which denotes a given symbol, under the assumption that the bidirectional link between the two ***must*** already exist
+- the method **`bool Contains(string literal)`** is for the client to determine whether a specific **`literal`** already denotes a symbol or not (be it a builtin or programmer-defined one)
+- the method **`ISymbolProvider Include(string literal, out Symbol symbol, bool asBuiltin)`** is for the client to retrieve a specific **`symbol`** through its corresponding **`literal`**, after ensuring the bidirectional link between the two has been appended, if necessary and according to the (optional) **`asBuiltin`** hint; note the method's signature enables the client to make chained calls into the same (current) implementation of **`ISymbolProvider`** to define or retrieve multiple symbols "at once"
+- the method **`Symbol Symbol(string literal, bool asBuiltin)`** has the same semantics as the **`Include`** method, but isn't chainable and instead directly returns the symbol of interest through its corresponding **`literal`** and (optional) **`asBuiltin`** hint
+- the method **`string NameOf(Symbol symbol)`** is for the client to retrieve the specific literal which denotes a given **`symbol`**, under the assumption that the bidirectional link between the two ***must*** already exist
 
 The overall practical utility of this **`ISymbolProvider`** contract's rationale will appear more clearly [when we derive our first interpreter](#deriving-a-sample-interpreter) from the default implementation of **`IEvaluator`** (ie, class [**`Evaluator`**](#class-evaluator)).
 
@@ -144,11 +144,11 @@ an environment only knows about its parent environment, if any (there is no such
 
 The **`IEnvironment`** contract's rationale is as follows:
 
-- the method **`bool Contains(string literal)`** is for the client to determine whether a specific literal denotes, or not, a symbol that is bound to a value in the current environment (or in the nearest of its ancestors)
-- the method **`bool Contains(Symbol symbol)`** is for the client to determine whether a specific, already known symbol is bound, or not, to a value in the current environment (or in the nearest of its ancestors)
-- the method **`bool TryGet(string literal, out object value)`** is for the client to attempt retrieving a specific symbol through its corresponding literal, if and only if such a symbol exists ***and*** is bound to a value in the current environment (or in the nearest of its ancestors)
-- the method **`bool TryGet(Symbol symbol, out object value)`** is for the client to attempt retrieving a specific, already known symbol, if and only if that symbol is bound to a value in the current environment (or in the nearest of its ancestors)
-- the method **`IEnvironment Set(Symbol symbol, object value)`** is for the client to forcefully bind a specific, already known symbol to a given value in the current environment, possibly "overriding" (or, "shadowing") all the symbol-to-value binding(s) previously known in one or more of the environment's ancestors
+- the method **`bool Contains(string literal)`** is for the client to determine whether a specific **`literal`** denotes, or not, a symbol that is bound to a value in the current environment (or in the nearest of its ancestors)
+- the method **`bool Contains(Symbol symbol)`** is for the client to determine whether a specific, already known **`symbol`** is bound, or not, to a value in the current environment (or in the nearest of its ancestors)
+- the method **`bool TryGet(string literal, out object value)`** is for the client to attempt retrieving a specific symbol's **`value`** through its corresponding **`literal`**, if and only if such a symbol exists ***and*** is bound to a value in the current environment (or in the nearest of its ancestors)
+- the method **`bool TryGet(Symbol symbol, out object value)`** is for the client to attempt retrieving a specific, already known **`symbol`**'s **`value`**, if and only if that symbol is bound to a value in the current environment (or in the nearest of its ancestors)
+- the method **`IEnvironment Set(Symbol symbol, object value)`** is for the client to forcefully bind, in the current environment, a specific, already known **`symbol`** to a given **`value`**, thus possibly "overriding" (or, "shadowing") all the symbol-to-value binding(s) previously known in one or more of the environment's ancestors
 - the property **`ISymbolProvider SymbolProvider`** is for the client to access the underlying **`ISymbolProvider`** which is used by the current environment to resolve literals into symbols whenever necessary
 
 Note that unlike the stakes at hands for an implementation of **`ISymbolProvider`**, an implementation of **`IEnvironment`** may choose to be thread-safe, but ideally, this should never be required, as the run-time tree of environment implementations should never be meant to support sharing between (possibly concurrent) calls into the **`IEvaluator`** implementation spawning them.
