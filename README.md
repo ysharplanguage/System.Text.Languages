@@ -89,7 +89,7 @@ public class Symbol
 ```
 
 ### interface ISymbolProvider
-**`ISymbolProvider`** is the contract for a bidirectional (ie, bijective and invertible) and mutable mapping between symbols and the literals that denote them.
+**`ISymbolProvider`** is the contract for a bidirectional (ie, bijective, invertible) and mutable mapping between symbols and the literals that denote them.
 The mutation of the mapping defined by an implementation of **`ISymbolProvider`** is append-only: one can only "append" a new bidirectional link between a [**`Symbol`**](#class-symbol) and the literal that denotes it.
 In other words, one cannot change the literal that denotes a symbol already known to the **`ISymbolProvider`**, nor one can change the symbol denotated by a literal already known to the same.
 The use of **`ISymbolProvider`** will fall into either one of two cases:
