@@ -100,7 +100,7 @@ The **`ISymbolProvider`** contract's rationale is as follows:
 - the method **`Symbol Symbol(string literal, bool asBuiltin)`** has the same semantics as the **`Include`** method, but isn't chainable and instead directly returns the symbol of interest through its corresponding literal and (optional) **`asBuiltin`** hint
 - the method **`string NameOf(Symbol symbol)`** is for the client to retrieve the specific literal which denotes a given symbol, under the assumption that the bidirectional link between the two ***must*** already exist
 
-The overall practical utility of this **`ISymbolProvider`** contract's rationale will appear more clearly when we derive our first interpreter from the default implementation of **`IEvaluator`** (ie, class [**`Evaluator`**](#class-evaluator)).
+The overall practical utility of this **`ISymbolProvider`** contract's rationale will appear more clearly [when we derive our first interpreter](#deriving-a-sample-interpreter) from the default implementation of **`IEvaluator`** (ie, class [**`Evaluator`**](#class-evaluator)).
 
 ```
 public interface ISymbolProvider
@@ -126,7 +126,7 @@ They say or do nothing about the binding of identifiable **`Symbol`** occurrence
 
 Thus, be it at language's definition time or at language's run-time, this binding from symbols to values is precisely the sole responsibility of the **`IEnvironment`** contract.
 
-At the language's definition time, a "global" environment (ie, an implementation of **`IEnvironment`**) may (or may not) be provided by the host language to the parser (ie, **`ILanguage`**) or to the interpreter (ie, **`IEvaluator`**) being constructed. If no such "global" environment is explicitly provided by the host, it is up to the **`ILanguage`** or **`IEvaluator`** implementation to "infer" (ie, decide about) a suitable one, which shall include at least bindings for [the 6 up to 8 core symbols aforementioned](#core-symbols).
+At the language's definition time, a "global" environment (ie, an implementation of **`IEnvironment`**) may (or may not) be provided by the host language to the parser (ie, **`ILanguage`**) or to the interpreter (ie, **`IEvaluator`**) being constructed. If no such "global" environment is explicitly provided by the host, it is up to the **`ILanguage`** or **`IEvaluator`** implementation to "infer" (ie, decide about) a suitable one, which shall include at least bindings for the [6 up to 8 core symbols](#core-symbols) aforementioned.
 
 At the language's run-time (in the case of an interpreter implementing **`IEvaluator`**), implementations of **`IEnvironment`** are used to represent what is generally known as the tree of "stack frames" (or "activation records"), dynamically growing and shrinking after taking into account the lexical scoping rules of the language being interpreted vs its current run-time context which originated (or, was "seeded") from the initial, so-called "global environment".
 
