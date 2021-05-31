@@ -41,7 +41,9 @@ The true identity of a symbol is its **`Index`**, allocated (during parsing) and
 The sign of **`Index`** indicates the linguistic origin of the **`Symbol`**: either negative or zero for language builtins (ie, operators, special signs, keywords, etc, that pertain to the language's definition)
 or strictly positive for programmer-defined symbols (ie, identifiers encountered in programs).
 
-There are exactly 8 language builtins common to all LISP-ish languages, 2 of which are optionally defined *semantically*:
+There are exactly 8 language builtins (aka "core symbols") common to all LISP-ish languages, 2 of which are optionally defined *semantically*:
+
+#### core symbols
 
 - **`Unknown`** is the "unknown symbol" which can be used to signal an unexpected character during parsing and/or an undefined identifier during evaluation
 - **`Open`** (resp. **`Close`** ) is the open (resp. close) parenthesis, used to build non-atomic S-expressions
@@ -93,12 +95,12 @@ Thus, a thread-safe implementation of **`ISymbolProvider`** could - possibly, bu
 
 The **`ISymbolProvider`** contract's rationale is as follows:
 
-- the method **`bool Contains(string literal)`** is for the client to know whether a specific literal already denotes a symbol or not (be it a builtin or programmer-defined one)
+- the method **`bool Contains(string literal)`** is for the client to determine whether a specific literal already denotes a symbol or not (be it a builtin or programmer-defined one)
 - the method **`ISymbolProvider Include(string literal, out Symbol symbol, bool asBuiltin)`** is for the client to retrieve a specific symbol through its corresponding literal, after ensuring the bidirectional link between the two has been appended, if necessary and according to the (optional) **`asBuiltin`** hint; note the method's signature enables the client to make chained calls into the same (current) implementation of **`ISymbolProvider`** to define or retrieve multiple symbols "at once"
 - the method **`Symbol Symbol(string literal, bool asBuiltin)`** has the same semantics as the **`Include`** method, but isn't chainable and instead directly returns the symbol of interest through its corresponding literal and (optional) **`asBuiltin`** hint
 - the method **`string NameOf(Symbol symbol)`** is for the client to retrieve the specific literal which denotes a given symbol, under the assumption that the bidirectional link between the two ***must*** already exist
 
-The overall practical utility of this **`ISymbolProvider`** contract's rationale will appear more clearly [when we derive our first interpreter](#deriving-a-sample-interpreter) from the default implementation of **`IEvaluator`** (ie, class [**`Evaluator`**](#class-evaluator)).
+The overall practical utility of this **`ISymbolProvider`** contract's rationale will appear more clearly when we derive our first interpreter from the default implementation of **`IEvaluator`** (ie, class [**`Evaluator`**](#class-evaluator)).
 
 ```
 public interface ISymbolProvider
@@ -111,6 +113,40 @@ public interface ISymbolProvider
 ```
 
 ### interface IEnvironment
+As we have seen, the [**`Symbol`**](#class-symbol) class and [**`ISymbolProvider`**](#interface-isymbolprovider) contract are concerned with 3 things, and these 3 things only:
+
+- the interning of all the occurrences of a literal that denotes a specific symbol (the purpose of the **`Symbol`** class)
+- the allocation and persistence (if only in memory) of the unique **`Index`** held by instances of the **`Symbol`** class through a bidirectional and append-only mutable mapping between these symbols and their corresponding literals (the purpose of the **`ISymbolProvider`** contract)
+- the distinction between builtin symbols that exclusively pertain to the language's definition itself (ie, special symbols or keywords, algebraic operators, etc) and programmer-defined symbols encountered in an input program to be parsed or interpreted (ie, identifiers for values or functions encountered in various lexical scopes)
+
+They say or do nothing about the binding of identifiable **`Symbol`** occurrences into actual values in the host languages (eg, C# in the CLR) - either at:
+
+- the language's definition time (ie, during the construction of, or the parsing performed by, a parser implementing the [**`ILanguage`**](#interface-ilanguage) contract), or
+- the language's run-time (ie, during the construction of, or the evaluation performed by, an interpreter implementing the [**`IEvaluator`**](#interface-ievaluator) contract).
+
+Thus, be it at language's definition time or at language's run-time, this binding from symbols to values is precisely the sole responsibility of the **`IEnvironment`** contract.
+
+At the language's definition time, a "global" environment (ie, an implementation of **`IEnvironment`**) may (or may not) be provided by the host language to the parser (ie, **`ILanguage`**) or to the interpreter (ie, **`IEvaluator`**) being constructed. If no such "global" environment is explicitly provided by the host, it is up to the **`ILanguage`** or **`IEvaluator`** implementation to "infer" (ie, decide about) a suitable one, which shall include at least bindings for [the 6 up to 8 core symbols aforementioned](#core-symbols).
+
+At the language's run-time (in the case of an interpreter implementing **`IEvaluator`**), implementations of **`IEnvironment`** are used to represent what is generally known as the tree of "stack frames" (or "activation records"), dynamically growing and shrinking after taking into account the lexical scoping rules of the language being interpreted vs its current run-time context which originated (or, was "seeded") from the initial, so-called "global environment".
+
+The tree of live **`IEnvironment`** implementations that are created at the language's run-time is induced by a child-to-parent relationship only:
+an environment only knows about its parent environment, if any (there is no such parent for the global environment, which serves as the top-most ancestor, or root of this tree).
+
+The **`IEnvironment`** contract's rationale is as follows:
+
+- the method **`bool Contains(string literal)`** is for the client to determine whether a specific literal denotes, or not, a symbol that is bound to a value in the current environment (or in the nearest of its ancestors)
+- the method **`bool Contains(Symbol symbol)`** is for the client to determine whether a specific, already known symbol is bound, or not, to a value in the current environment (or in the nearest of its ancestors)
+- the method **`bool TryGet(string literal, out object value)`** is for the client to attempt retrieving a specific symbol through its corresponding literal, if and only if such a symbol exists ***and*** is bound to a value in the current environment (or in the nearest of its ancestors)
+- the method **`bool TryGet(Symbol symbol, out object value)`** is for the client to attempt retrieving a specific, already known symbol, if and only if that symbol is bound to a value in the current environment (or in the nearest of its ancestors)
+- the method **`IEnvironment Set(Symbol symbol, object value)`** is for the client to forcefully bind a specific, already known symbol to a given value in the current environment, possibly "overriding" (or, "shadowing") all the symbol-to-value binding(s) previously known in one or more of the environment's ancestors
+- the property **`ISymbolProvider SymbolProvider`** is for the client to access the underlying **`ISymbolProvider`** which is used by the current environment to resolve literals into symbols whenever necessary
+
+Note that unlike the stakes at hands for an implementation of **`ISymbolProvider`**, an implementation of **`IEnvironment`** may choose to be thread-safe, but ideally, this should never be required, as the run-time tree of environment implementations should never be meant to support sharing between (possibly concurrent) calls into the **`IEvaluator`** implementation spawning them.
+
+Finally, the single most fundamental semantic assumption (and actual hard requirement) for an implementation of **`IEnvironment`** should be that any child environment ***must*** be constructed to use the same run-time implementation of **`ISymbolProvider`** as is already in use by its parent,
+most likely the very same implementation which was used to construct the initial global environment while initializing the ambient **`ILanguage`** or **`IEvaluator`** implementation.
+
 ```
 public interface IEnvironment : IDictionary<Symbol, object>
 {
