@@ -35,6 +35,32 @@ May 30, 2021
 ## API
 
 ### class Symbol
+
+A **`Symbol`** interns all the literal occurrences that denote it, during both parsing and evaluation of the final S-expression.
+
+Examples may include the "**`true`**" and "**`false`**" boolean constants, or the "**`null`**" special value, or arithmetic operators such as "**`+`**", etc.
+
+The true identity of a symbol is its **`Index`**, allocated (during parsing) and maintained (during evaluation), by an implementation of [**`ISymbolProvider`**](#interface-isymbolprovider).
+
+The sign of **`Index`** indicates the linguistic origin of the **`Symbol`**: either negative or zero for language builtins (ie, operators, special signs, keywords, etc, that pertain to the language's definition)
+or strictly positive for programmer-defined symbols (ie, identifiers encountered in programs).
+
+There are exactly 8 language builtins common to all LISP-ish languages, 2 of which are optionally defined *semantically*:
+
+- **`Unknown`** is the "unknown symbol" which can be used to signal an unexpected character during parsing and/or an undefined identifier during evaluation
+- **`Open`** (resp. **`Close`** ) is the open (resp. close) parenthesis, used to build non-atomic S-expressions
+- **`Quote`** is the quote symbol, used to build complex, unevaluated S-expressions, eg, for representations in "code as data" scenarios
+- **`Params`** is the optional "**`params`**" keyword, whose role could be the same as JavaScript's "**`arguments`**"
+- **`This`** is the optional "**`this`**" keyword, whose role could be the same as C++/Java/JavaScript/C#'s "**`this`**"
+- **`Let`** is the "**`let`**" binding keyword, used to define bindings from symbols to values in lexical scopes
+- **`Lambda`** is the "**`=>`**" lambda abstraction keyword, used to define first-class anonymous functions, playing the same role as lambda abstractions in lambda calculus
+
+Both **`params`** and **`this`** are optionally defined *semantically* in the sense that it is the responsibility of an implementation of [**`IEvaluator`**](#interface-ievaluator) to decide whether a specific semantics is attached to them or not.
+
+Symbols are just that: atoms which intern multiple occurrences of the same literals, be they builtins or programmer-defined identifiers.
+
+They do not know (nor does the implementation [**`ISymbolProvider`**](#interface-isymbolprovider) either) to which actual values and/or semantics they are attached to, at any particular point in time of the parsing or evaluation phases - this knowledge being the sole responsibility of an implementation of [**`IEnvironment`**](#interface-ienvironment).
+
 ```
 public class Symbol
 {
@@ -181,7 +207,7 @@ public class Environment : Dictionary<Symbol, object>, IEnvironment
 ```
 public class Evaluator : IEvaluator
 {
-    internal struct Builtin { internal readonly Closure Closure; internal Builtin(Closure closure) => Closure = closure; }
+    internal class Builtin { internal readonly Closure Closure; internal Builtin(Closure closure) => Closure = closure; }
     protected static readonly object[] Empty = new object[0];
     protected static object Clone(object expression) => expression is object[]? ((object[])expression).Select(value => Clone(value)).ToArray() : expression;
     protected static object Eval(IEnvironment environment, object expression)
@@ -407,7 +433,7 @@ namespace System.Text.Languages.Runtime
 
     public class Evaluator : IEvaluator
     {
-        internal struct Builtin { internal readonly Closure Closure; internal Builtin(Closure closure) => Closure = closure; }
+        internal class Builtin { internal readonly Closure Closure; internal Builtin(Closure closure) => Closure = closure; }
         protected static readonly object[] Empty = new object[0];
         protected static object Clone(object expression) => expression is object[]? ((object[])expression).Select(value => Clone(value)).ToArray() : expression;
         protected static object Eval(IEnvironment environment, object expression)
