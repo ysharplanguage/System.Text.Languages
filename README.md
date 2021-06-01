@@ -7,14 +7,14 @@ May 31, 2021
 ***
 
 ### Table of contents
-- [API](#api) (complete source: [Namespace.cs](#namespacecs-52-lines))
+- [API](#api)
   - [Symbol](#class-symbol) class
   - [ISymbolProvider](#interface-isymbolprovider) interface
   - [IEnvironment](#interface-ienvironment) interface
   - [ILanguage](#interface-ilanguage) interface
   - [IEvaluator](#interface-ievaluator) interface
   - [Closure](#delegate-closure) delegate
-- [Base and default implementations](#base-and-default-implementations) (complete source: [Runtime.cs](#runtimecs-150-lines))
+- [Base and default implementations](#base-and-default-implementations)
   - [SymbolProviderBase](#abstract-class-symbolproviderbase) abstract class
   - [DefaultSymbolProvider](#class-defaultsymbolprovider) class
   - [Environment](#class-environment) class
@@ -30,6 +30,17 @@ May 31, 2021
 ***
 
 ## API
+
+Complete source: [Namespace.cs](#namespacecs-52-lines)
+
+The API consists in:
+
+- the [Symbol](#class-symbol) class
+- the [ISymbolProvider](#interface-isymbolprovider) interface
+- the [IEnvironment](#interface-ienvironment) interface
+- the [ILanguage](#interface-ilanguage) interface
+- the [IEvaluator](#interface-ievaluator) interface
+- the [Closure](#delegate-closure) delegate
 
 ### class Symbol
 A **`Symbol`** interns all the literal occurrences that denote it, during both parsing and evaluation of the final S-expression.
@@ -197,6 +208,15 @@ public delegate object Closure(IEnvironment environment, params object[] args);
 ```
 
 ## Base and default implementations
+
+Complete source: [Runtime.cs](#runtimecs-150-lines)
+
+The base and default implementations consist in:
+
+- the [SymbolProviderBase](#abstract-class-symbolproviderbase) abstract class
+- the [DefaultSymbolProvider](#class-defaultsymbolprovider) class
+- the [Environment](#class-environment) class
+- the [Evaluator](#class-evaluator) class
 
 ### abstract class SymbolProviderBase
 ```
