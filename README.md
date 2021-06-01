@@ -142,12 +142,12 @@ As we have seen, the [**`Symbol`**](#class-symbol) class and [**`ISymbolProvider
 - the allocation and persistence (if only in memory) of the unique **`Index`** held by instances of the **`Symbol`** class through a bidirectional and append-only mutable mapping between these symbols and their corresponding literals (the purpose of the **`ISymbolProvider`** contract)
 - the distinction between builtin symbols that exclusively pertain to the language's definition itself (ie, special symbols or keywords, algebraic operators, etc) and programmer-defined symbols found in an input program to be parsed or interpreted (ie, identifiers for values or functions encountered in various lexical scopes) - a distinction inferred from the sign (strictly positive vs negative or zero) of the same **`Index`** identifying property
 
-They say or do nothing about the binding of identifiable **`Symbol`** occurrences into actual values in the host language (eg, C# over the CLR) - either at:
+**`Symbol`** and **`ISymbolProvider`** do not say or do anything about what the binding of identifiable **`Symbol`** occurrences into actual values in the host language (eg, C# over the CLR) are supposed to be, whether it is at:
 
 - the language's definition time (ie, during the construction of, or the parsing performed by, a parser implementing the [**`ILanguage`**](#interface-ilanguage) contract), or
 - the language's run-time (ie, during the construction of, or the evaluation performed by, an interpreter implementing the [**`IEvaluator`**](#interface-ievaluator) contract).
 
-Thus, be it at language's definition time or at language's run-time, this binding from symbols to values is precisely the sole responsibility of the **`IEnvironment`** contract.
+Thus, be it at language's definition time or at language's run-time, this binding from symbols to values is precisely the sole responsibility of an implementation of the **`IEnvironment`** contract.
 
 At the language's definition time, a "global" environment (ie, an implementation of **`IEnvironment`**) may (or may not) be provided by the host language to the parser (ie, **`ILanguage`**) or to the interpreter (ie, **`IEvaluator`**) being constructed. If no such "global" environment is explicitly provided by the host, it is up to the **`ILanguage`** or **`IEvaluator`** implementation to "infer" (ie, decide about) a suitable one, which shall include at least bindings for the [6 up to 8 core symbols](#core-symbols) aforementioned.
 
