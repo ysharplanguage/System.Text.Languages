@@ -285,9 +285,9 @@ The base and default implementations consist in:
 - the [Environment](#class-environment) class
 - the [Evaluator](#class-evaluator) class
 
-Now, the attentive reader of the code provided herein will soon find that there isn't in fact much more to say about these base and default implementations beyond what has already been laid out in the discussion of [their respective contracts](#api).
+Now, the attentive reader of the code provided herein will soon find that there isn't in fact much more to say about these base and default implementations beyond what has already been laid out in the presentation of [their respective contracts](#api).
 
-Except for one most notably: the [**`Evaluator`**](#class-evaluator) base class, which, as we'll see, does come with a few syntactic, semantic, and even (so to speak) "meta linguistic" convenience "perks" for the implementer of a language interpreter whose primary intermediate (and/or final) representation is the one we have discussed in the above **`IEvaluator`** contract section.
+Except for one most notably: the **`Evaluator`** base class, which, [as we'll see](#class-evaluator), does come with a few syntactic, semantic, and even (so to speak) "meta linguistic" convenience "perks" for the implementer of a language interpreter whose intermediate (and/or final) run-time representation of code and data is the particular flavor of S-expressions that we have discussed in the above [**`IEvaluator`**](#interface-ievaluator) contract section.
 
 ### abstract class SymbolProviderBase
 ```
