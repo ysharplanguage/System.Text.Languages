@@ -236,7 +236,7 @@ or
 
 or
 
-**`typeof(void)`** (which is an ***atom*** whose run-time type is **`System.Type`**)
+**`typeof(void)`** (which is an ***atom*** whose run-time type is **`System.Type`**... or, well, **`System.RuntimeType`** actually...)
 
 are all valid S-expressions that could be considered (or computed) eventually by some specific implementation of **`IEvaluator`**, while
 
