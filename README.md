@@ -70,7 +70,7 @@ Obviously, if either or both of **`Params`** and **`This`** is/are optional, the
 
 Symbols are just that: atoms which intern multiple occurrences of the same literals, be they builtins or programmer-defined identifiers.
 
-They do not know (nor does the implementation **`ISymbolProvider`** either) to which actual values and/or semantics they are attached to, at any particular point in time of the parsing or evaluation phases - this knowledge being the sole responsibility of an implementation of [**`IEnvironment`**](#interface-ienvironment).
+They do not (nor does the implementation of **`ISymbolProvider`** either) know or care about which actual values and/or semantics they are attached to, at any particular point in time of the parsing or evaluation phases - this knowledge being the sole responsibility of an implementation of [**`IEnvironment`**](#interface-ienvironment).
 
 Finally, note that not all "seemingly atomic" literals of the target language being represented are good candidates / suitable to have a **`Symbol`** attached to them, even as programmer-written only ones:
 numeric constants such as "**`1776`**" or string literals such as " **`"Hello, world!"`** " aren't actually atomic from the **`ISymbolProvider`** implementer's standpoint.
