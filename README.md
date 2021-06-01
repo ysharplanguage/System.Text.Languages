@@ -208,7 +208,7 @@ Assuming the reader is reasonably familiar with the origins and notion of S-expr
 
 **`( x ( y ( z NIL ) ) )`**
 
-rather, by "S-expressions", we will refer more specifically to what in our natural managed execution environment (ie, the CLR) can be recursively constructed from these three fairly simple construction rules:
+rather, by "S-expressions", we will refer more specifically to what can be recursively constructed - in our natural managed execution environment (ie, the CLR) - from these 3 simple construction rules:
 
 1. a S-expression is either an "***atom***" or a "***list of***" S-expressions
 2. an "***atom***" is either the special **`null`** value as known to the CLR, or any other non-**`null`** value which can be boxed on the heap ***and isn't*** an instance of **`object[]`**
@@ -268,7 +268,7 @@ public interface IEvaluator : ILanguage
 ```
 
 ### delegate Closure
-The **`Closure`** delegate type is merely a convenience facility which allows clients of [**`IEvaluator`**](#interface-ievaluator) that have obtained a reference to a closure in the target language (after evaluating the whole input program), to invoke, *in the host language* (ie, C#) the said closure with thus a somewhat deferred execution in the same run-time environment which gave birth to the implementation of **`IEvaluator`**.
+The **`Closure`** delegate type is merely a convenience facility which allows clients of [**`IEvaluator`**](#interface-ievaluator) that have obtained a reference to a closure in the target language (eg, after evaluating a whole input program returning such a value), to invoke, *in the host language* (ie, C#) the said closure with thus a somewhat deferred execution, in the same run-time environment which gave birth to the implementation of **`IEvaluator`**.
 
 ```
 public delegate object Closure(IEnvironment environment, params object[] args);
