@@ -253,7 +253,7 @@ With these design choices and not-too-limited representational flexibility in mi
 - the **`object Evaluate(IEnvironment environment, string input)`** method shall:
   1. accept a possibly null global **`environment`** (and infer its own if that's the case), then
   2. parse the **`input`** by delegating this to a call into the implementation of the **`object Parse(object context, string input)`** (inherited from the **`ILanguage`** contract) where the **`context`** is set to be the **`environment`**, and
-  3. finally, rely on the implementation of the **`object Evaluate(IEnvironment environment, object expression)`** to perform the sort of evaluation that has been pertaining for long already to LISP's **`eval`**
+  3. finally, rely on the implementation of the **`object Evaluate(IEnvironment environment, object expression)`** method to perform the sort of evaluation that has been pertaining for long already to LISP's **`eval`**
 - the **`ISymbolProvider SymbolProvider`** property is simply required to return the necessarily non-null [**`ISymbolProvider`**](#interface-isymbolprovider) which was injected at construction time of the current **`IEvaluator`** in the first place
 
 ```
