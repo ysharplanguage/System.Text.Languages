@@ -180,14 +180,14 @@ public interface IEnvironment
 ```
 
 ### interface ILanguage
-There isn't much to say about the fairly loose **`ILanguage`** interface beyond the fact that it is the contract to implement (partially or in full) for a general purpose language pre- and/or post-, or sole processor.
+The fairly loose **`ILanguage`** contract is the one to implement (partially or in full) for, say, a "general purpose" language's pre- and/or post-, or sole processor.
 
-The **`ILanguage`** contract's rationale is as follows:
+Its rationale is as follows:
 
-- a common "pre-processing" operation performed over a textual language **`input`** phrase is to parse it into another intermediate form, prior to further processing; hence, the **`object Parse(string input)`** method
+- a common "pre-processing" need which naturally arises from interpreting or compiling a textual language **`input`** phrase is to parse it first into another intermediate form, prior to further processing; hence, the **`object Parse(string input)`** method
 - since it is contemplated that the client may also wish, in some cases, to provide contextual, or "out-of-band" (eg, configuration) information for the parsing operation to execute as expected, the contract makes for this provision through the **`object Parse(object context, string input)`** method overload, with its additional **`context`** parameter
-- a common "post-processing" operation performed over a known intermediate form (**`value`**) of what once possibly was a textual language input phrase, or the result of an evaluation thereof, is to turn it back into a serializable representation (**`type`**); hence the **`object Serialize(Type type, object value)`** method
-- finally, turning such a value back into a textual form, say, through the **`string ToString(object value)`** method, can quite naturally be seen (and implemented accordingly) as just a special case of serialization where the first (**`type`**) argument to **`Serialize`** (the serialization target type) would be implied and equal to **`typeof(string)`** - thus making **`ToString`** more of a convenient, specialized helper around **`Serialize`** than a truly distinct facility
+- as a dual of the previous, a common "post-processing" need which also naturally arises from holding a known intermediate form (**`value`**) of what possibly once was given as a textual language input phrase, or the result of an evaluation thereof, is to turn it back into a serializable representation (**`type`**); hence the **`object Serialize(Type type, object value)`** method
+- finally, turning such a value back into a textual form more specifically, say, through the **`string ToString(object value)`** method, can also quite naturally be seen (and implemented accordingly) as just a special case of the serialization process, where the first (**`type`**) argument to **`Serialize`** (ie, the serialization target type) happens to be implied and equal to **`typeof(string)`** - thus making **`ToString`** more of a convenient, specialized helper around **`Serialize`** than a truly distinct facility
 
 But we will see that a specific implementation of the [**`IEvaluator`**](#interface-ievaluator) contract, which derives from **`ILanguage`**, can also afford making a few more assumptions, which are meaningful especially from the standpoint of the implementer of an interpreter.
 
@@ -284,6 +284,10 @@ The base and default implementations consist in:
 - the [DefaultSymbolProvider](#class-defaultsymbolprovider) class
 - the [Environment](#class-environment) class
 - the [Evaluator](#class-evaluator) class
+
+Now, the attentive reader of the code provided herein will soon find that there isn't in fact much more to say about these base and default implementations beyond what has already been laid out in the discussion of [their respective contracts](#api).
+
+Except for one most notably: the [**`Evaluator`**](#class-evaluator) base class, which, as we'll see, does come with a few syntactic, semantic, and even (so to speak) "meta linguistic" convenience "perks" for the implementer of a language interpreter whose primary intermediate (and/or final) representation is the one we have discussed in the above **`IEvaluator`** contract section.
 
 ### abstract class SymbolProviderBase
 ```
