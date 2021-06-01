@@ -204,7 +204,7 @@ public interface ILanguage
 ### interface IEvaluator
 Before we delve into the purpose of the **`IEvaluator`** contract, it is now a good time to try being more precise about what we mean exactly by a facility for the implementation of "interpreters of LISP-ish languages" in C#.
 
-Assuming the reader is reasonably familiar with the origins and notion of S-expressions, it is worth pointing out right away that, for the sake of both the implementation simplicity (ie, straightforwardness) and overall design flexibility, we will ***not*** restrict ourselves to only the historical/canonical form of S-expressions based on solely on ordered pairs and the special **`NIL`** symbol used in the original LISP:
+Assuming the reader is reasonably familiar with the origins and notion of S-expressions, it is worth pointing out right away that, for the sake of both the implementation simplicity (ie, straightforwardness) and the overall design flexibility, we will ***not*** restrict ourselves to only the historical/canonical form of S-expressions based on solely on ordered pairs and the special **`NIL`** symbol used in the original LISP:
 
 **`( x ( y ( z NIL ) ) )`**
 
@@ -234,7 +234,7 @@ or
 
 **`typeof(void)`**
 
-are valid S-expressions that could be considered (or computed) at some point by any specific implementation of **`IEvaluator`**, while
+are valid S-expressions that could be considered (or computed) at some point by some specific implementation of **`IEvaluator`**, while
 
 **`new byte[100].AsSpan(50)`**
 
@@ -242,7 +242,7 @@ clearly isn't one, [for obvious reasons](https://docs.microsoft.com/en-us/dotnet
 
 We should note then that, unlike **`NIL`** in the original LISP, the special **`null`** value isn't meant to be an alias for something else just for the sake of terminating a S-expression, but rather is simply thrown into the mix of allowed atomic values that can appear anywhere in a non-empty list.
 
-With these overarching design choices and limited representational flexibility in mind, we can now look at the **`IEvaluator`** contract's rationale per se:
+With these overarching design choices and not-too-limited representational flexibility in mind, we can now look at the **`IEvaluator`** contract's rationale per se:
 
 
 
