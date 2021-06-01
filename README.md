@@ -281,7 +281,14 @@ public abstract class SymbolProviderBase : ISymbolProvider
     protected abstract bool TryGet(string literal, out Symbol symbol);
     protected SymbolProviderBase(IEnumerable<KeyValuePair<string, Symbol>> core)
     {
-        if (core != null) foreach (var item in core) { Add(item.Key, item.Value); }
+        if (core != null)
+            foreach (var item in core)
+            {
+                if (item.Value?.Index == -SymbolCount)
+                    Add(item.Key, item.Value);
+                else
+                    throw new InvalidOperationException();
+            }
     }
     public bool Contains(string literal) => TryGet(literal, out var ignored);
     public ISymbolProvider Include(string literal, out Symbol symbol, bool asBuiltin = false)
@@ -539,7 +546,7 @@ namespace System.Text.Languages.Runtime
     {
         protected abstract void Add(string literal, Symbol symbol);
         protected abstract bool TryGet(string literal, out Symbol symbol);
-        protected SymbolProviderBase(IEnumerable<KeyValuePair<string, Symbol>> core) { if (core != null) foreach (var item in core) { Add(item.Key, item.Value); } }
+        protected SymbolProviderBase(IEnumerable<KeyValuePair<string, Symbol>> core) { if (core != null) foreach (var item in core) { if (item.Value?.Index == -SymbolCount) Add(item.Key, item.Value); else throw new InvalidOperationException(); } }
         public bool Contains(string literal) => TryGet(literal, out var ignored);
         public ISymbolProvider Include(string literal, out Symbol symbol, bool asBuiltin = false) { symbol = Symbol(literal, asBuiltin); return this; }
         public Symbol Symbol(string literal, bool asBuiltin = false) { Symbol symbol; if (!TryGet(literal, out symbol)) Add(literal, symbol = new Symbol(asBuiltin ? -SymbolCount : SymbolCount)); return symbol; }
