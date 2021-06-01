@@ -54,7 +54,7 @@ or strictly positive for programmer-defined symbols (ie, identifiers encountered
 
 There are exactly 8 language builtins (aka "core symbols") common to all LISP-ish languages, 2 of which are optionally defined *semantically*:
 
-#### core symbols
+#### Core symbols
 
 - **`Unknown`** is the "unknown symbol" which can be used to signal an unexpected character during parsing and/or an undefined identifier during evaluation
 - **`Open`** (resp. **`Close`** ) is the open (resp. close) parenthesis, used to build non-atomic S-expressions
@@ -285,9 +285,9 @@ The base and default implementations consist in:
 - the [Environment](#class-environment) class
 - the [Evaluator](#class-evaluator) class
 
-Now, the attentive reader of the code provided herein will soon find that there isn't in fact much more to say about these base and default implementations beyond what has already been laid out in the presentation of [their respective contracts](#api).
+Now, the attentive reader of the code provided herein will soon find that there isn't in fact much more to say about these base and default implementations beyond what has already been laid out as semantic expectations from [their respective contracts](#api).
 
-Except for one most notably: the **`Evaluator`** base class, which, [as we'll see](#class-evaluator), does come with a few syntactic, semantic, and even (so to speak) "meta linguistic" convenience "perks" for the implementer of a language interpreter whose intermediate (and/or final) run-time representation of code and data is the particular flavor of S-expressions that we have discussed in the above [**`IEvaluator`**](#interface-ievaluator) contract section.
+Except for one most notably: the **`Evaluator`** base class, which, [as we'll see](#class-evaluator), does come with a few syntactic, semantic, and even (so to speak) "meta linguistic" convenience "perks" for the implementer of a language interpreter whose intermediate (and/or final) run-time representation of code and data is the particular flavor of S-expressions that we have discussed in the [**`IEvaluator`**](#interface-ievaluator) section.
 
 ### abstract class SymbolProviderBase
 ```
@@ -365,6 +365,14 @@ public class Environment : Dictionary<Symbol, object>, IEnvironment
 ```
 
 ### class Evaluator
+Expectedly, **`Evaluator`** is the base class that one will want to derive from in order to implement an interpreter with relatively little effort.
+
+#### Lexical analysis
+
+Unsurprisingly, the lexing/tokenizing operation (which turns a textual input phrase of the target language into ***atom*** streams - or ***list of*** thereof - for the construction of S-expressions in the sense given in the [**`IEvaluator`**](#interface-ievaluator) section) will be taken care of through an implementation override of the **`Tokenize`** method, with the following assumptions and conventions:
+
+tbc...
+
 ```
 public class Evaluator : IEvaluator
 {
