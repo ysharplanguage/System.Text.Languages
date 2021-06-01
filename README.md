@@ -383,7 +383,7 @@ And unsurprisingly, the lexing/tokenizing operation (which turns a textual input
   - **`Symbol.EOF`** exactly when the end of input is detected
 - it must also set, at all time, the **`out int matched`** parameter to the (strictly positive) number of characters matched in the input for the resulting token, or simply zero when either of **`Symbol.Unknown`** or **`Symbol.EOF`** is to be returned
 
-### Tokenize perk
+#### Tokenize perk
 Its **`ref int offset`** parameter allows for the implementation to silently consume whitespace (whenever it is reasonable to do so, and simply by incrementing the **`offset`** accordingly) prior to matching the input against actual tokens (either valid, **`Unknown`**, or **`EOF`**) which are only indicated through the combination of the **`matched`** parameter and the return value.
 
 ```
