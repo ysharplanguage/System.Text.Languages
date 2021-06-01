@@ -168,7 +168,7 @@ Finally, the single most fundamental semantic assumption (and actual hard requir
 most likely the very same implementation which was used to construct the initial global environment while initializing the ambient **`ILanguage`** or **`IEvaluator`** implementation.
 
 ```
-public interface IEnvironment : IDictionary<Symbol, object>
+public interface IEnvironment
 {
     bool Contains(string literal);
     bool Contains(Symbol symbol);
@@ -441,7 +441,7 @@ namespace System.Text.Languages
         string NameOf(Symbol symbol);
     }
 
-    public interface IEnvironment : IDictionary<Symbol, object>
+    public interface IEnvironment
     {
         bool Contains(string literal);
         bool Contains(Symbol symbol);
