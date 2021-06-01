@@ -19,8 +19,6 @@ May 31, 2021
   - [DefaultSymbolProvider](#class-defaultsymbolprovider) class
   - [Environment](#class-environment) class
   - [Evaluator](#class-evaluator) class
-    [Tokenize assumptions](#tokenize-assumptions)
-    [Tokenize duties](#tokenize-duties)
 - [Deriving a sample interpreter](#deriving-a-sample-interpreter)
 - [A more advanced example](#a-more-advanced-example)
 - [Complete sources](#complete-sources)
@@ -381,9 +379,7 @@ And unsurprisingly, the lexing/tokenizing operation (which turns a textual input
 
 #### Tokenize duties
 - the lexer/tokenizer that is being implemented through **`Tokenize`** must return, for the current position at **`offset`**, either:
-  - before the end of the input is reached:
-    a non-**`Symbol.EOF`** value as the resulting token that is recognized at this position, or
-    **`Symbol.Unknown`** when stumbling upon an unexpected character, or
+  - before the end of the input is reached: a non-**`Symbol.EOF`** value as the resulting token that is recognized at this position, or **`Symbol.Unknown`** when stumbling upon an unexpected character, or
   - **`Symbol.EOF`** exactly when the end of input is detected
 - it must also set, at all time, the **`out int matched`** parameter to the (strictly positive) number of characters matched in the input for the resulting token, or simply zero when either of **`Symbol.Unknown`** or **`Symbol.EOF`** is to be returned
 
