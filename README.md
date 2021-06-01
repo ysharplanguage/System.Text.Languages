@@ -73,11 +73,11 @@ Symbols are just that: atoms which intern multiple occurrences of the same liter
 They do not (nor does the implementation of **`ISymbolProvider`** either) know or care about which actual values and/or semantics they are attached to, at any particular point in time of the parsing or evaluation phases - this knowledge being the sole responsibility of an implementation of [**`IEnvironment`**](#interface-ienvironment).
 
 Finally, note that not all "seemingly atomic" literals of the target language being represented are good candidates / suitable to have a **`Symbol`** attached to them, even as programmer-written only ones:
-numeric constants such as "**`1776`**" or string literals such as " **`"Hello, world!"`** " aren't actually atomic from the **`ISymbolProvider`** implementer's standpoint.
+numeric constants such as "**`1792`**" or string literals such as " **`"Hello, world!"`** " aren't actually atomic from the **`ISymbolProvider`** implementer's standpoint.
 Both of these are in fact composite constructs for the latter (of a presumed integral type represented in base 10 and of a character string type whose delimeter happens to be the double quote, resp.)
 which are interpretable as constants only relatively to the host language, per se, of the implementation of **`ISymbolProvider`**, but arguably not relatively to that very implementation.
 
-In the first case, indeed it wouldn't make much sense (at all) to try denoting a distinct **`Symbol`** of the target language for each and every of the concrete values of the ambient **`System.Int32`** type directly coming from the CLR-based host language.
+In the first case, "**`1792`**", indeed it wouldn't make much sense (at all) to try denoting for the target language a distinct **`Symbol`** for each and every of the concrete values of the **`System.Int32`** type coming from the CLR-based host language after parsing some user input.
 
 ```
 public class Symbol
@@ -150,7 +150,7 @@ At the language's definition time, a "global" environment (ie, an implementation
 
 At the language's run-time (in the case of an interpreter implementing **`IEvaluator`**), implementations of **`IEnvironment`** are used to represent what is generally known as the tree of "stack frames" (or "activation records"), dynamically growing and shrinking after taking into account the lexical scoping rules of the language being interpreted vs its current run-time context which originated (or, was "seeded") from the initial, so-called "global environment".
 
-The tree of live **`IEnvironment`** implementations that are created at the language's run-time is induced by a child-to-parent relationship only:
+The tree of **`IEnvironment`** implementations that are created at the language's run-time is induced by a child-to-parent relationship only:
 an environment only knows about its parent environment, if any (there is no such parent for the global environment, which serves as the top-most ancestor, or root of this tree).
 
 The **`IEnvironment`** contract's rationale is as follows:
@@ -189,7 +189,7 @@ The **`ILanguage`** contract's rationale is as follows:
 - a common "post-processing" operation performed over a known intermediate form (**`value`**) of what once possibly was a textual language input phrase, or the result of an evaluation thereof, is to turn it back into a serializable representation (**`type`**); hence the **`object Serialize(Type type, object value)`** method
 - finally, turning such a value back into a textual form, say, through the **`string ToString(object value)`** method, can quite naturally be seen (and implemented accordingly) as just a special case of serialization where the first (**`type`**) argument to **`Serialize`** (the serialization target type) would be implied and equal to **`typeof(string)`** - thus making **`ToString`** more of a convenient, specialized helper around **`Serialize`** than a truly distinct facility
 
-But we will see that a specific implementation of the [**`IEvaluator`**](#interface-ievaluator) contract, which derives from **`ILanguage`**, can also afford making only a few more assumptions which are meaningful especially from the standpoint of the implementer of an interpreter.
+But we will see that a specific implementation of the [**`IEvaluator`**](#interface-ievaluator) contract, which derives from **`ILanguage`**, can also afford making a few more assumptions, which are meaningful especially from the standpoint of the implementer of an interpreter.
 
 ```
 public interface ILanguage
@@ -204,7 +204,7 @@ public interface ILanguage
 ### interface IEvaluator
 Before we delve into the purpose of the **`IEvaluator`** contract, it is now a good time to try being more precise about what we mean exactly by a facility for the implementation of "interpreters of LISP-ish languages" in C#.
 
-Assuming the reader is reasonably familiar with the origins and notion of S-expressions, it is worth pointing out right away that, for the sake of both the implementation simplicity (ie, straightforwardness) and the overall design flexibility, we will ***not*** restrict ourselves to only the historical/canonical form of S-expressions based on solely on ordered pairs and the special **`NIL`** symbol used in the original LISP:
+Assuming the reader is reasonably familiar with the origins and notion of S-expressions, it is worth pointing out right away that, for the sake of both the implementation simplicity (ie, straightforwardness) and the design flexibility, we will ***not*** restrict ourselves to only the historical/canonical form of S-expressions based solely on ordered pairs and the special **`NIL`** symbol used in the original LISP:
 
 **`( x ( y ( z NIL ) ) )`**
 
@@ -214,37 +214,47 @@ rather, by "S-expressions", we will refer more specifically to what in our natur
 2. an "***atom***" is either the special **`null`** value as known to the CLR, or any other non-**`null`** value which can be boxed on the heap ***and isn't*** an instance of **`object[]`**
 3. a "***list of***" S-expressions is an instance of **`object[]`** (possibly empty) whose every element (if any) is itself a S-expression
 
-Thus, all of
+Thus,
 
-**`null`**
-
-or
-
-**`new object[] { 123, "456", null, Symbol.Unknown, true }`**
+**`null`** (which is the **`null`** ***atom***)
 
 or
 
-**`new object[0]`**
+**`new object[] { 123, "456", null, Symbol.Unknown, true }`** (which is a ***list of*** valid S-expressions)
 
 or
 
-**`new List<int>()`**
+**`new object[0]`** (which is an empty ***list of*** S-expressions)
 
 or
 
-**`typeof(void)`**
+**`1789`** (which is an ***atom*** whose run-time type is **`System.Int32`**)
 
-are valid S-expressions that could be considered (or computed) at some point by some specific implementation of **`IEvaluator`**, while
+or
 
-**`new byte[100].AsSpan(50)`**
+**`new List<int>()`** (which is an ***atom*** whose run-time type is **`System.Collections.Generic.List<int>`**)
 
-clearly isn't one, [for obvious reasons](https://docs.microsoft.com/en-us/dotnet/api/system.span-1).
+or
+
+**`typeof(void)`** (which is an ***atom*** whose run-time type is **`System.Type`**)
+
+are all valid S-expressions that could be considered (or computed) eventually by some specific implementation of **`IEvaluator`**, while
+
+**`new byte[100].AsSpan(50)`** (forbidden)
+
+clearly isn't one, [for obvious reasons](https://docs.microsoft.com/en-us/dotnet/api/system.span-1) (wrt. CLR types whose values can vs. cannot live on the heap).
 
 We should note then that, unlike **`NIL`** in the original LISP, the special **`null`** value isn't meant to be an alias for something else just for the sake of terminating a S-expression, but rather is simply thrown into the mix of allowed atomic values that can appear anywhere in a non-empty list.
 
-With these overarching design choices and not-too-limited representational flexibility in mind, we can now look at the **`IEvaluator`** contract's rationale per se:
+With these design choices and not-too-limited representational flexibility in mind, we can now look at the **`IEvaluator`** contract's rationale per se:
 
-
+- the **`object Quote(object expression)`** method is simply required to return exactly **`new object[] { Symbol.Quote, expression }`**, that is, a quoted S-expression from the one provided; this, in order to follow the long LISP tradition of representing "code as data" in a homoiconic manner
+- the **`object Evaluate(string input)`** method is simply required to be equivalent to calling **`Evaluate(null, input)`**
+- the **`object Evaluate(IEnvironment environment, string input)`** method shall:
+  1. accept a possibly null global **`environment`** (and infer its own if that's the case), then
+  2. parse the **`input`** by delegating this to a call into the implementation of the **`object Parse(object context, string input)`** (inherited from the **`ILanguage`** contract) where the **`context`** is set to be the **`environment`**, and
+  3. finally, rely on the implementation of the **`object Evaluate(IEnvironment environment, object expression)`** to perform the sort of evaluation that has been pertaining for long already to LISP's **`eval`**
+- the **`ISymbolProvider SymbolProvider`** property is simply required to return the necessarily non-null [**`ISymbolProvider`**](#interface-isymbolprovider) which was injected at construction time of the current **`IEvaluator`** in the first place
 
 ```
 public interface IEvaluator : ILanguage
@@ -258,6 +268,8 @@ public interface IEvaluator : ILanguage
 ```
 
 ### delegate Closure
+The **`Closure`** delegate type is merely a convenience facility which allows clients of [**`IEvaluator`**](#interface-ievaluator) that have obtained a reference to a closure in the target language (after evaluating the whole input program), to invoke, *in the host language* (ie, C#) the said closure with thus a somewhat deferred execution in the same run-time environment which gave birth to the implementation of **`IEvaluator`**.
+
 ```
 public delegate object Closure(IEnvironment environment, params object[] args);
 ```
