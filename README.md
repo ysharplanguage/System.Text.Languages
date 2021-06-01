@@ -21,8 +21,8 @@ May 31, 2021
   - [Evaluator](#class-evaluator) class
 - [Deriving a sample interpreter](#deriving-a-sample-interpreter)
 - [A more advanced example](#a-more-advanced-example)
-- Complete sources
-  - [Namespace.cs](#namespacecs-50-lines)
+- [Complete sources](#complete-sources)
+  - [Namespace.cs](#namespacecs-52-lines)
   - [Runtime.cs](#runtimecs-150-lines)
 - [License and disclaimer](#license-and-disclaimer)
 - [Contact info](#contact-info)
