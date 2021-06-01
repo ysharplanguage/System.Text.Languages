@@ -180,6 +180,17 @@ public interface IEnvironment
 ```
 
 ### interface ILanguage
+There isn't much to say about the fairly loose **`ILanguage`** interface beyond the fact that it is the contract to implement (partially or in full) for a general purpose language pre- and/or post-, or sole processor.
+
+The **`ILanguage`** contract's rationale is as follows:
+
+- a common "pre-processing" operation performed over a textual language input phrase is to parse it into another intermediate form, prior to further processing; hence, the **`object Parse(string input)`** method
+- since it is contemplated that the client may also wish, in some cases, to provide contextual, or "out-of-band" (eg, configuration) information for the parsing operation to execute as expected, the contract makes for this provision through the **`object Parse(object context, string input)`** method overload, with its additional **`context`** parameter
+- a common "post-processing" operation performed over a known intermediate form of what once possibly was a textual language input phrase, or the result of an evaluation thereof, is to turn it back into a serializable representation; hence the **`object Serialize(Type type, object value)`** method
+- finally, turning such a value back into a textual form, say, through the **`string ToString(object value)`** method, can quite naturally be seen as just a special case of serialization where the first argument to **`Serialize`** (the serialization target type) is implied and equal to **`typeof(string)`**
+
+But we will see that an implementation of the [**`IEvaluator`**](#interface-ievaluator) contract, which derives from **`ILanguage`**, can also make only a few more assumptions which are meaningful especially in the context of implementing an interpreter.
+
 ```
 public interface ILanguage
 {
