@@ -7,14 +7,14 @@ May 31, 2021
 ***
 
 ### Table of contents
-- [API](#api) (complete source: [Namespace.cs](#namespacecs-50-lines))
+- [API](#api) (complete source: [Namespace.cs](#namespacecs-52-lines))
   - [Symbol](#class-symbol) class
   - [ISymbolProvider](#interface-isymbolprovider) interface
   - [IEnvironment](#interface-ienvironment) interface
   - [ILanguage](#interface-ilanguage) interface
   - [IEvaluator](#interface-ievaluator) interface
-- [Base and default implementations](#base-and-default-implementations) (complete source: [Runtime.cs](#runtimecs-150-lines))
   - [Closure](#delegate-closure) delegate type
+- [Base and default implementations](#base-and-default-implementations) (complete source: [Runtime.cs](#runtimecs-150-lines))
   - [SymbolProviderBase](#abstract-class-symbolproviderbase) abstract class
   - [DefaultSymbolProvider](#class-defaultsymbolprovider) class
   - [Environment](#class-environment) class
@@ -191,12 +191,12 @@ public interface IEvaluator : ILanguage
 }
 ```
 
-## Base and default implementations
-
 ### delegate Closure
 ```
 public delegate object Closure(IEnvironment environment, params object[] args);
 ```
+
+## Base and default implementations
 
 ### abstract class SymbolProviderBase
 ```
@@ -340,6 +340,8 @@ public class Evaluator : IEvaluator
         var offset = 0; var parse = ParseSExpression(environment = environment ?? NewScope(null, SymbolProvider), input, Tokenize(environment, input, out var matched, ref offset), matched, ref offset);
         return Tokenize(environment, input, out var ignored, ref offset) == null ? parse : throw new Exception($"unexpected '{input[offset]}' at {offset}");
     }
+    protected virtual object Params(IEnvironment environment, params object[] args) => Symbol.Unknown;
+    protected virtual object This(IEnvironment environment, params object[] args) => Symbol.Unknown;
     protected virtual object Definition(IEnvironment environment, params object[] args)
     {
         var scope = ((object[])args[1]).Cast<object[]>().Aggregate(NewScope(environment), (local, let) => local.Set((Symbol)let[0], Eval(local, let[1])));
@@ -357,7 +359,7 @@ public class Evaluator : IEvaluator
                 var named = varargs < 0 ? formals.Length : varargs;
                 for (var i = 0; i < named; i++) local.Set((Symbol)formals[i], i < @params.Length ? @params[i] : Symbol.Unknown);
                 if (0 <= varargs) local.Set((Symbol)((object[])formals[varargs])[0], varargs < @params.Length ? @params.Skip(varargs).ToArray() : (object)Symbol.Unknown);
-                local.Set(Symbol.This, @this).Set(Symbol.Params, @params);
+                local.Set(Symbol.This, This(local, @this)).Set(Symbol.Params, Params(local, new[] { (object)@params }));
                 return Eval(local, args[2]);
             };
     }
@@ -367,8 +369,8 @@ public class Evaluator : IEvaluator
         new KeyValuePair<string, Symbol>("(", Symbol.Open),
         new KeyValuePair<string, Symbol>(")", Symbol.Close),
         new KeyValuePair<string, Symbol>("`", Symbol.Quote),
-        new KeyValuePair<string, Symbol>("params", Symbol.Params),
-        new KeyValuePair<string, Symbol>("this", Symbol.This),
+        new KeyValuePair<string, Symbol>($"__{Guid.NewGuid():N}__", Symbol.Params),
+        new KeyValuePair<string, Symbol>($"__{Guid.NewGuid():N}__", Symbol.This),
         new KeyValuePair<string, Symbol>("let", Symbol.Let),
         new KeyValuePair<string, Symbol>("=>", Symbol.Lambda)
     };
@@ -394,7 +396,7 @@ TBC...
 
 ## Complete sources
 
-### Namespace.cs (50 lines)
+### Namespace.cs (52 lines)
 ```
 using System;
 using System.Collections.Generic;
@@ -445,6 +447,8 @@ namespace System.Text.Languages
         object Evaluate(IEnvironment environment, object expression);
         ISymbolProvider SymbolProvider { get; }
     }
+
+    public delegate object Closure(IEnvironment environment, params object[] args);
 }
 ```
 
@@ -456,8 +460,6 @@ using System.Linq;
 
 namespace System.Text.Languages.Runtime
 {
-    public delegate object Closure(IEnvironment environment, params object[] args);
-
     public abstract class SymbolProviderBase : ISymbolProvider
     {
         protected abstract void Add(string literal, Symbol symbol);
@@ -557,6 +559,8 @@ namespace System.Text.Languages.Runtime
             var offset = 0; var parse = ParseSExpression(environment = environment ?? NewScope(null, SymbolProvider), input, Tokenize(environment, input, out var matched, ref offset), matched, ref offset);
             return Tokenize(environment, input, out var ignored, ref offset) == null ? parse : throw new Exception($"unexpected '{input[offset]}' at {offset}");
         }
+        protected virtual object Params(IEnvironment environment, params object[] args) => Symbol.Unknown;
+        protected virtual object This(IEnvironment environment, params object[] args) => Symbol.Unknown;
         protected virtual object Definition(IEnvironment environment, params object[] args)
         {
             var scope = ((object[])args[1]).Cast<object[]>().Aggregate(NewScope(environment), (local, let) => local.Set((Symbol)let[0], Eval(local, let[1])));
@@ -574,7 +578,7 @@ namespace System.Text.Languages.Runtime
                     var named = varargs < 0 ? formals.Length : varargs;
                     for (var i = 0; i < named; i++) local.Set((Symbol)formals[i], i < @params.Length ? @params[i] : Symbol.Unknown);
                     if (0 <= varargs) local.Set((Symbol)((object[])formals[varargs])[0], varargs < @params.Length ? @params.Skip(varargs).ToArray() : (object)Symbol.Unknown);
-                    local.Set(Symbol.This, @this).Set(Symbol.Params, @params);
+                    local.Set(Symbol.This, This(local, @this)).Set(Symbol.Params, Params(local, new[] { (object)@params }));
                     return Eval(local, args[2]);
                 };
         }
@@ -584,8 +588,8 @@ namespace System.Text.Languages.Runtime
             new KeyValuePair<string, Symbol>("(", Symbol.Open),
             new KeyValuePair<string, Symbol>(")", Symbol.Close),
             new KeyValuePair<string, Symbol>("`", Symbol.Quote),
-            new KeyValuePair<string, Symbol>("params", Symbol.Params),
-            new KeyValuePair<string, Symbol>("this", Symbol.This),
+            new KeyValuePair<string, Symbol>($"__{Guid.NewGuid():N}__", Symbol.Params),
+            new KeyValuePair<string, Symbol>($"__{Guid.NewGuid():N}__", Symbol.This),
             new KeyValuePair<string, Symbol>("let", Symbol.Let),
             new KeyValuePair<string, Symbol>("=>", Symbol.Lambda)
         };
