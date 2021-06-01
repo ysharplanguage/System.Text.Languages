@@ -137,7 +137,7 @@ As we have seen, the [**`Symbol`**](#class-symbol) class and [**`ISymbolProvider
 
 - the interning of all the occurrences of a literal that denotes a specific symbol (the purpose of the **`Symbol`** class)
 - the allocation and persistence (if only in memory) of the unique **`Index`** held by instances of the **`Symbol`** class through a bidirectional and append-only mutable mapping between these symbols and their corresponding literals (the purpose of the **`ISymbolProvider`** contract)
-- the distinction between builtin symbols that exclusively pertain to the language's definition itself (ie, special symbols or keywords, algebraic operators, etc) and programmer-defined symbols found in an input program to be parsed or interpreted (ie, identifiers for values or functions encountered in various lexical scopes)
+- the distinction between builtin symbols that exclusively pertain to the language's definition itself (ie, special symbols or keywords, algebraic operators, etc) and programmer-defined symbols found in an input program to be parsed or interpreted (ie, identifiers for values or functions encountered in various lexical scopes) - a distinction inferred from the sign (strictly positive vs negative or zero) of the same **`Index`** identifying property
 
 They say or do nothing about the binding of identifiable **`Symbol`** occurrences into actual values in the host language (eg, C# over the CLR) - either at:
 
