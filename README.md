@@ -370,7 +370,7 @@ public class Environment : Dictionary<Symbol, object>, IEnvironment
 ### class Evaluator
 Expectedly, **`Evaluator`** is the base class that one will want to derive from in order to implement an interpreter with relatively little effort.
 
-And unsurprisingly, the lexing/tokenizing operation (which turns a textual input phrase of the target language into ***atom***s - or ***list of*** thereof - for the construction of S-expressions in the sense given in the [**`IEvaluator`**](#interface-ievaluator) section) will be the prerogative of an implementation override of the **`Tokenize`** method, with the following assumptions and expectations:
+And unsurprisingly, the lexing/tokenizing operation (which turns a textual input phrase of the target language into ***atom***s - or ***list of*** thereof - for the construction of S-expressions in the sense given in the [**`IEvaluator`**](#interface-ievaluator) section) will be the prerogative of an implementation override of the (protected) **`object Tokenize(object context, string input, out int matched, ref int offset)`** method, with the following assumptions and expectations:
 
 #### Tokenize assumptions
 - the **`context`** parameter can be assumed to be the same global **`IEnvironment`** implementation which was passed onto the **`Evaluate`** and **`Parse`** methods down the call stack
@@ -383,7 +383,8 @@ And unsurprisingly, the lexing/tokenizing operation (which turns a textual input
   - **`Symbol.EOF`** exactly when the end of input is detected
 - it must also set, at all time, the **`out int matched`** parameter to the (strictly positive) number of characters matched in the input for the resulting token, or simply zero when either of **`Symbol.Unknown`** or **`Symbol.EOF`** is to be returned
 
-tbc...
+### Tokenize perk
+Its **`ref int offset`** parameter allows for the implementation to silently consume whitespace (whenever it is reasonable to do so, and simply by incrementing the **`offset`** accordingly) prior to matching the input against actual tokens (either valid, **`Unknown`**, or **`EOF`**) which are only indicated through the combination of the **`matched`** parameter and the return value.
 
 ```
 public class Evaluator : IEvaluator
