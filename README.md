@@ -111,7 +111,7 @@ such symbols will have their **`Index`** growing "downward" in the negative inte
 new programmer-defined symbols will have their **`Index`** growing "upward" in the (strictly) positive integers
 
 Ideally, an implementation of **`ISymbolProvider`** should be the only piece of mutable state injected into (and owned by) an implementation of [**`ILanguage`**](#interface-ilanguage) or [**`IEvaluator`**](#interface-ievaluator) at construction time of the latter.
-Thus, a thread-safe implementation of **`ISymbolProvider`** could - possibly, but not necessarily - allow to make its owning **`ILanguage`** or **`IEvaluator`** thread-safe as well, while a non-thread-safe implementation of the former will ***necessarily*** make the latter non-thread-safe.
+Thus, a thread-safe implementation of **`ISymbolProvider`** could - possibly, but not necessarily - allow to make its owner **`ILanguage`** or **`IEvaluator`** thread-safe as well, while a non-thread-safe implementation of the former will ***necessarily*** make the latter non-thread-safe, by very construction.
 
 The **`ISymbolProvider`** contract's rationale is as follows:
 
