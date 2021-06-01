@@ -13,7 +13,7 @@ May 31, 2021
   - [IEnvironment](#interface-ienvironment) interface
   - [ILanguage](#interface-ilanguage) interface
   - [IEvaluator](#interface-ievaluator) interface
-  - [Closure](#delegate-closure) delegate type
+  - [Closure](#delegate-closure) delegate
 - [Base and default implementations](#base-and-default-implementations) (complete source: [Runtime.cs](#runtimecs-150-lines))
   - [SymbolProviderBase](#abstract-class-symbolproviderbase) abstract class
   - [DefaultSymbolProvider](#class-defaultsymbolprovider) class
