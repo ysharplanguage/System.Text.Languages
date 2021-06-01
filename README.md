@@ -19,6 +19,8 @@ May 31, 2021
   - [DefaultSymbolProvider](#class-defaultsymbolprovider) class
   - [Environment](#class-environment) class
   - [Evaluator](#class-evaluator) class
+    [Tokenize assumptions](#tokenize-assumptions)
+    [Tokenize duties](#tokenize-duties)
 - [Deriving a sample interpreter](#deriving-a-sample-interpreter)
 - [A more advanced example](#a-more-advanced-example)
 - [Complete sources](#complete-sources)
@@ -52,7 +54,7 @@ The true identity of a symbol is its **`Index`**, allocated (during parsing) and
 The sign of **`Index`** indicates the linguistic origin of the **`Symbol`**: either negative or zero for language builtins (ie, operators, special signs, keywords, etc, that pertain to the language's definition)
 or strictly positive for programmer-defined symbols (ie, identifiers encountered in programs).
 
-There are exactly 8 language builtins (aka "core symbols") common to all LISP-ish languages, 2 of which are optionally defined *semantically*:
+There are exactly 8 language builtins (aka "core symbols") common to all LISP-ish languages implemented thanks to the facility presented here, 2 of which are optionally defined *semantically*:
 
 #### Core symbols
 
@@ -72,12 +74,14 @@ Symbols are just that: atoms which intern multiple occurrences of the same liter
 
 They do not (nor does the implementation of **`ISymbolProvider`** either) know or care about which actual values and/or semantics they are attached to, at any particular point in time of the parsing or evaluation phases - this knowledge being the sole responsibility of an implementation of [**`IEnvironment`**](#interface-ienvironment).
 
-Finally, note that not all "seemingly atomic" literals of the target language being represented are good candidates / suitable to have a **`Symbol`** attached to them, even as programmer-written only ones:
+Also, note that not all "seemingly atomic" literals of the target language being represented are good candidates or suitable to have a **`Symbol`** attached to them, even as programmer-written only ones:
 numeric constants such as "**`1792`**" or string literals such as " **`"Hello, world!"`** " aren't actually atomic from the **`ISymbolProvider`** implementer's standpoint.
 Both of these are in fact composite constructs for the latter (of a presumed integral type represented in base 10 and of a character string type whose delimeter happens to be the double quote, resp.)
 which are interpretable as constants only relatively to the host language, per se, of the implementation of **`ISymbolProvider`**, but arguably not relatively to that very implementation.
 
 In the first case, "**`1792`**", indeed it wouldn't make much sense (at all) to try denoting for the target language a distinct **`Symbol`** for each and every of the concrete values of the **`System.Int32`** type coming from the CLR-based host language after parsing some user input.
+
+Finally, there is in fact a 9th special/predefined symbol baked in as a public, static, read-only field of the **`Symbol`** class, ie, **`Symbol.EOF`**, but this one should be of no concern to anyone who isn't specifically busy with overriding the [**`Evaluator`**](#class-evaluator)'s **`Tokenize`** method.
 
 ```
 public class Symbol
@@ -90,7 +94,8 @@ public class Symbol
         Params = new Symbol(-4),
         This = new Symbol(-5),
         Let = new Symbol(-6),
-        Lambda = new Symbol(-7);
+        Lambda = new Symbol(-7),
+        EOF = new Symbol(int.MaxValue);
     public Symbol(int index) => Index = index;
     public override bool Equals(object obj) => ReferenceEquals(this, obj);
     public override int GetHashCode() => Index;
@@ -367,9 +372,20 @@ public class Environment : Dictionary<Symbol, object>, IEnvironment
 ### class Evaluator
 Expectedly, **`Evaluator`** is the base class that one will want to derive from in order to implement an interpreter with relatively little effort.
 
-#### Lexical analysis
+And unsurprisingly, the lexing/tokenizing operation (which turns a textual input phrase of the target language into ***atom***s - or ***list of*** thereof - for the construction of S-expressions in the sense given in the [**`IEvaluator`**](#interface-ievaluator) section) will be the prerogative of an implementation override of the **`Tokenize`** method, with the following assumptions and expectations:
 
-Unsurprisingly, the lexing/tokenizing operation (which turns a textual input phrase of the target language into ***atom*** streams - or ***list of*** thereof - for the construction of S-expressions in the sense given in the [**`IEvaluator`**](#interface-ievaluator) section) will be taken care of through an implementation override of the **`Tokenize`** method, with the following assumptions and conventions:
+#### Tokenize assumptions
+- the **`context`** parameter can be assumed to be the same global **`IEnvironment`** implementation which was passed onto the **`Evaluate`** and **`Parse`** methods down the call stack
+- at all time, the whole textual input phrase is held in the **`input`** parameter
+- likewise, at all time, the current position in the input is known through the last **`offset`** parameter
+
+#### Tokenize duties
+- the lexer/tokenizer that is being implemented through **`Tokenize`** must return, for the current position at **`offset`**, either:
+  - before the end of the input is reached:
+    a non-**`Symbol.EOF`** value as the resulting token that is recognized at this position, or
+    **`Symbol.Unknown`** when stumbling upon an unexpected character, or
+  - **`Symbol.EOF`** exactly when the end of input is detected
+- it must also set, at all time, the **`out int matched`** parameter to the (strictly positive) number of characters matched in the input for the resulting token, or simply zero when either of **`Symbol.Unknown`** or **`Symbol.EOF`** is to be returned
 
 tbc...
 
@@ -419,32 +435,32 @@ public class Evaluator : IEvaluator
     protected virtual object Tokenize(object context, string input, out int matched, ref int offset)
     {
         matched = 0;
-        return null;
+        return Symbol.EOF;
     }
     protected object ParseSExpression(object context, string input, object lookAhead, int matched, ref int offset)
     {
         object value = lookAhead;
-        if (lookAhead != null && Symbol.Quote.Equals(value))
+        if (!Symbol.EOF.Equals(lookAhead) && Symbol.Quote.Equals(value))
         {
             offset += matched; lookAhead = Tokenize(context, input, out matched, ref offset);
             value = Quote(ParseSExpression(context, input, lookAhead, matched, ref offset));
         }
-        else if (lookAhead != null && Symbol.Open.Equals(value))
+        else if (!Symbol.EOF.Equals(lookAhead) && Symbol.Open.Equals(value))
         {
             var list = new List<object>();
-            offset += matched; while ((lookAhead = Tokenize(context, input, out matched, ref offset)) != null && !Symbol.Unknown.Equals(value = lookAhead) && !Symbol.Close.Equals(value)) list.Add(ParseSExpression(context, input, lookAhead, matched, ref offset));
-            if (lookAhead != null) { if (!Symbol.Unknown.Equals(value)) offset += matched; else throw new Exception($"unexpected '{input[offset]}' at {offset}"); }
+            offset += matched; while (!Symbol.EOF.Equals(lookAhead = Tokenize(context, input, out matched, ref offset)) && !Symbol.Unknown.Equals(value = lookAhead) && !Symbol.Close.Equals(value)) list.Add(ParseSExpression(context, input, lookAhead, matched, ref offset));
+            if (!Symbol.EOF.Equals(lookAhead)) { if (!Symbol.Unknown.Equals(value)) offset += matched; else throw new Exception($"unexpected '{input[offset]}' at {offset}"); }
             else throw new Exception($"unexpected EOF at {offset}");
             value = list.ToArray();
         }
-        else if (lookAhead != null) { if (!Symbol.Unknown.Equals(value)) offset += matched; else throw new Exception($"unexpected '{input[offset]}' at {offset}"); }
+        else if (!Symbol.EOF.Equals(lookAhead)) { if (!Symbol.Unknown.Equals(value)) offset += matched; else throw new Exception($"unexpected '{input[offset]}' at {offset}"); }
         else throw new Exception($"unexpected EOF at {offset}");
         return value;
     }
     protected virtual object Parse(IEnvironment environment, string input)
     {
         var offset = 0; var parse = ParseSExpression(environment = environment ?? NewScope(null, SymbolProvider), input, Tokenize(environment, input, out var matched, ref offset), matched, ref offset);
-        return Tokenize(environment, input, out var ignored, ref offset) == null ? parse : throw new Exception($"unexpected '{input[offset]}' at {offset}");
+        return Symbol.EOF.Equals(Tokenize(environment, input, out var ignored, ref offset)) ? parse : throw new Exception($"unexpected '{input[offset]}' at {offset}");
     }
     protected virtual object Params(IEnvironment environment, params object[] args) => Symbol.Unknown;
     protected virtual object This(IEnvironment environment, params object[] args) => Symbol.Unknown;
@@ -511,7 +527,7 @@ namespace System.Text.Languages
 {
     public class Symbol
     {
-        public static readonly Symbol Unknown = new Symbol(0), Open = new Symbol(-1), Close = new Symbol(-2), Quote = new Symbol(-3), Params = new Symbol(-4), This = new Symbol(-5), Let = new Symbol(-6), Lambda = new Symbol(-7);
+        public static readonly Symbol Unknown = new Symbol(0), Open = new Symbol(-1), Close = new Symbol(-2), Quote = new Symbol(-3), Params = new Symbol(-4), This = new Symbol(-5), Let = new Symbol(-6), Lambda = new Symbol(-7), EOF = new Symbol(int.MaxValue);
         public Symbol(int index) => Index = index;
         public override bool Equals(object obj) => ReferenceEquals(this, obj);
         public override int GetHashCode() => Index;
@@ -639,31 +655,31 @@ namespace System.Text.Languages.Runtime
         protected Evaluator(ISymbolProvider symbolProvider) => SymbolProvider = symbolProvider ?? throw new ArgumentNullException(nameof(symbolProvider), "cannot be null");
         protected virtual IEnvironment NewScope(IEnvironment parent, ISymbolProvider symbolProvider = null) => new Environment(parent, symbolProvider);
         protected virtual IEnvironment Builtins(IEnvironment global, object expression) => global.Set(Symbol.Let, (Closure)Definition).Set(Symbol.Lambda, (Closure)Abstraction);
-        protected virtual object Tokenize(object context, string input, out int matched, ref int offset) { matched = 0; return null; }
+        protected virtual object Tokenize(object context, string input, out int matched, ref int offset) { matched = 0; return Symbol.EOF; }
         protected object ParseSExpression(object context, string input, object lookAhead, int matched, ref int offset)
         {
             object value = lookAhead;
-            if (lookAhead != null && Symbol.Quote.Equals(value))
+            if (!Symbol.EOF.Equals(lookAhead) && Symbol.Quote.Equals(value))
             {
                 offset += matched; lookAhead = Tokenize(context, input, out matched, ref offset);
                 value = Quote(ParseSExpression(context, input, lookAhead, matched, ref offset));
             }
-            else if (lookAhead != null && Symbol.Open.Equals(value))
+            else if (!Symbol.EOF.Equals(lookAhead) && Symbol.Open.Equals(value))
             {
                 var list = new List<object>();
-                offset += matched; while ((lookAhead = Tokenize(context, input, out matched, ref offset)) != null && !Symbol.Unknown.Equals(value = lookAhead) && !Symbol.Close.Equals(value)) list.Add(ParseSExpression(context, input, lookAhead, matched, ref offset));
-                if (lookAhead != null) { if (!Symbol.Unknown.Equals(value)) offset += matched; else throw new Exception($"unexpected '{input[offset]}' at {offset}"); }
+                offset += matched; while (!Symbol.EOF.Equals(lookAhead = Tokenize(context, input, out matched, ref offset)) && !Symbol.Unknown.Equals(value = lookAhead) && !Symbol.Close.Equals(value)) list.Add(ParseSExpression(context, input, lookAhead, matched, ref offset));
+                if (!Symbol.EOF.Equals(lookAhead)) { if (!Symbol.Unknown.Equals(value)) offset += matched; else throw new Exception($"unexpected '{input[offset]}' at {offset}"); }
                 else throw new Exception($"unexpected EOF at {offset}");
                 value = list.ToArray();
             }
-            else if (lookAhead != null) { if (!Symbol.Unknown.Equals(value)) offset += matched; else throw new Exception($"unexpected '{input[offset]}' at {offset}"); }
+            else if (!Symbol.EOF.Equals(lookAhead)) { if (!Symbol.Unknown.Equals(value)) offset += matched; else throw new Exception($"unexpected '{input[offset]}' at {offset}"); }
             else throw new Exception($"unexpected EOF at {offset}");
             return value;
         }
         protected virtual object Parse(IEnvironment environment, string input)
         {
             var offset = 0; var parse = ParseSExpression(environment = environment ?? NewScope(null, SymbolProvider), input, Tokenize(environment, input, out var matched, ref offset), matched, ref offset);
-            return Tokenize(environment, input, out var ignored, ref offset) == null ? parse : throw new Exception($"unexpected '{input[offset]}' at {offset}");
+            return Symbol.EOF.Equals(Tokenize(environment, input, out var ignored, ref offset)) ? parse : throw new Exception($"unexpected '{input[offset]}' at {offset}");
         }
         protected virtual object Params(IEnvironment environment, params object[] args) => Symbol.Unknown;
         protected virtual object This(IEnvironment environment, params object[] args) => Symbol.Unknown;
