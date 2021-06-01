@@ -139,7 +139,7 @@ As we have seen, the [**`Symbol`**](#class-symbol) class and [**`ISymbolProvider
 - the allocation and persistence (if only in memory) of the unique **`Index`** held by instances of the **`Symbol`** class through a bidirectional and append-only mutable mapping between these symbols and their corresponding literals (the purpose of the **`ISymbolProvider`** contract)
 - the distinction between builtin symbols that exclusively pertain to the language's definition itself (ie, special symbols or keywords, algebraic operators, etc) and programmer-defined symbols found in an input program to be parsed or interpreted (ie, identifiers for values or functions encountered in various lexical scopes)
 
-They say or do nothing about the binding of identifiable **`Symbol`** occurrences into actual values in the host languages (eg, C# in the CLR) - either at:
+They say or do nothing about the binding of identifiable **`Symbol`** occurrences into actual values in the host language (eg, C# over the CLR) - either at:
 
 - the language's definition time (ie, during the construction of, or the parsing performed by, a parser implementing the [**`ILanguage`**](#interface-ilanguage) contract), or
 - the language's run-time (ie, during the construction of, or the evaluation performed by, an interpreter implementing the [**`IEvaluator`**](#interface-ievaluator) contract).
@@ -187,9 +187,9 @@ The **`ILanguage`** contract's rationale is as follows:
 - a common "pre-processing" operation performed over a textual language input phrase is to parse it into another intermediate form, prior to further processing; hence, the **`object Parse(string input)`** method
 - since it is contemplated that the client may also wish, in some cases, to provide contextual, or "out-of-band" (eg, configuration) information for the parsing operation to execute as expected, the contract makes for this provision through the **`object Parse(object context, string input)`** method overload, with its additional **`context`** parameter
 - a common "post-processing" operation performed over a known intermediate form of what once possibly was a textual language input phrase, or the result of an evaluation thereof, is to turn it back into a serializable representation; hence the **`object Serialize(Type type, object value)`** method
-- finally, turning such a value back into a textual form, say, through the **`string ToString(object value)`** method, can quite naturally be seen as just a special case of serialization where the first argument to **`Serialize`** (the serialization target type) is implied and equal to **`typeof(string)`**
+- finally, turning such a value back into a textual form, say, through the **`string ToString(object value)`** method, can quite naturally be seen (and implemented accordingly) as just a special case of serialization where the first argument to **`Serialize`** (the serialization target type) would be implied and equal to **`typeof(string)`** - thus making the **`ToString`** more of a convenient, specialized wrapper around **`Serialize`** than a distinct facility
 
-But we will see that an implementation of the [**`IEvaluator`**](#interface-ievaluator) contract, which derives from **`ILanguage`**, can also make only a few more assumptions which are meaningful especially in the context of implementing an interpreter.
+But we will see that a specific implementation of the [**`IEvaluator`**](#interface-ievaluator) contract, which derives from **`ILanguage`**, can also afford making only a few more assumptions which are meaningful especially from the standpoint of the implementer of an interpreter.
 
 ```
 public interface ILanguage
@@ -202,6 +202,50 @@ public interface ILanguage
 ```
 
 ### interface IEvaluator
+Before we delve into the purpose of the **`IEvaluator`** contract, it is now a good time to try being more precise about what we mean exactly by a facility for the implementation of "interpreters of LISP-ish languages" in C#.
+
+Assuming the reader is reasonably familiar with the origins and notion of S-expressions, it is worth pointing out right away that, for the sake of both the implementation simplicity (ie, straightforwardness) and overall design flexibility, we will ***not*** restrict ourselves to only the historical/canonical form of S-expressions based on solely on ordered pairs and the special **`NIL`** symbol used in the original LISP:
+
+**`( x ( y ( z NIL ) ) )`**
+
+rather, by "S-expressions", we will refer more specifically to what in our natural managed execution environment (ie, the CLR) can be recursively constructed from these three fairly simple construction rules:
+
+1. a S-expression is either an "***atom***" or a "***list of***" S-expressions
+2. an "***atom***" is either the special **`null`** value as known to the CLR, or any other non-**`null`** value which can be boxed on the heap ***and isn't*** an instance of **`object[]`**
+3. a "***list of***" S-expressions is an instance of **`object[]`** (possibly empty) whose every element (if any) is itself a S-expression
+
+Thus, all of
+
+**`null`**
+
+or
+
+**`new object[] { 123, "456", null, Symbol.Unknown, true }`**
+
+or
+
+**`new object[0]`**
+
+or
+
+**`new List<int>()`**
+
+or
+
+**`typeof(void)`**
+
+are valid S-expressions that could be considered (or computed) at some point by any specific implementation of **`IEvaluator`**, while
+
+**`new byte[100].AsSpan(50)`**
+
+clearly isn't one, [for obvious reasons](https://docs.microsoft.com/en-us/dotnet/api/system.span-1).
+
+We should note then that, unlike **`NIL`** in the original LISP, the special **`null`** value isn't meant to be an alias for something else just for the sake of terminating a S-expression, but rather is simply thrown into the mix of allowed atomic values that can appear anywhere in a non-empty list.
+
+With these overarching design choices and limited representational flexibility in mind, we can now look at the **`IEvaluator`** contract's rationale per se:
+
+
+
 ```
 public interface IEvaluator : ILanguage
 {
