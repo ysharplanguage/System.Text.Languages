@@ -404,10 +404,10 @@ After lexing and parsing are taken care of, one will soon start thinking about w
 
 Remember that design and implementation choices around builtin symbols will generally have to support at least two distinct phases:
 
-I. What are those symbols, their respective literals, and how do we make an implementation of **`ISymbolProvider`** know about them, to start with?
-II. Once the symbols are known to the **`ISymbolProvider`** injected into the evaluator, how do we make them available to this or that implementation of **`IEnvironment`**, and under which conditions (or, "binding rules") exactly?
+1. What are those symbols, their respective literals, and how do we make an implementation of **`ISymbolProvider`** know about them, to start with?
+2. Once the symbols are known to the **`ISymbolProvider`** injected into the evaluator, how do we make them available to this or that implementation of **`IEnvironment`**, and under which conditions (or, "binding rules") exactly?
 
-**`Evaluator`** provides a simple pattern to follow, covering both (I) and (II):
+**`Evaluator`** provides a simple pattern to follow, covering both (1) and (2):
 
 ```
 using System.Text.Languages;
@@ -415,7 +415,7 @@ using System.Text.Languages.Runtime;
 
 public class MyLISP : Evaluator
 {
-    // Phase (I)
+    // Phase (1)
     //
     // define and cache our new builtins once and for all:
     public readonly Symbol NIL, PostalServiceActSigner, PostalServiceActYear;
@@ -427,7 +427,7 @@ public class MyLISP : Evaluator
         .Include("PSAS", out PostalServiceActSigner, true)
         .Include("PSAY", out PostalServiceActYear, true);
 
-    // Phase (II)
+    // Phase (2)
     //
     // bind our new builtins in the global environment, if so desired
     protected override IEnvironment Builtins(IEnvironment global, object expression) =>
@@ -493,7 +493,7 @@ public class MyLISP : Evaluator
 }
 ```
 
-Which can then make this sort of tests possible:
+Which can then make writing this sort of tests possible:
 
 ```
     var mylisp = new MyLISP();
