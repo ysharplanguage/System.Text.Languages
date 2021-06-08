@@ -394,7 +394,7 @@ Thus, assuming the implementation of **`Tokenize`** can deal properly with (opti
 
 **`( <atom0> <atom1> ( ) <atom3> ( <atom40> <atom41> ( ) <atom43> ) <atom5> )`**
 
-But there is a barely veiled perk to our **`Evaluator`**'s internals:
+There is a barely veiled perk to our **`Evaluator`**'s internals:
 
 the **`object Parse(object context, string input)`** method does not actually call directly into the handy **`object ParseSExpression(...)`**, instead it calls into the (protected, virtual) **`object Parse(IEnvironment environment, string input)`** ***which then*** delegates the S-expressions parsing work to **`object ParseSExpression(...)`**.
 
