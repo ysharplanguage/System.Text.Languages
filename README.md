@@ -23,7 +23,7 @@ May 31, 2021
 - [A more advanced example](#a-more-advanced-example)
 - [Complete sources](#complete-sources)
   - [Namespace.cs](#namespacecs-52-lines)
-  - [Runtime.cs](#runtimecs-150-lines)
+  - [Runtime.cs](#runtimecs-149-lines)
 - [License and disclaimer](#license-and-disclaimer)
 - [Contact info](#contact-info)
 
@@ -279,7 +279,7 @@ public delegate object Closure(IEnvironment environment, params object[] args);
 
 ## Base and default implementations
 
-Complete source: [Runtime.cs](#runtimecs-150-lines)
+Complete source: [Runtime.cs](#runtimecs-149-lines)
 
 The base and default implementations consist in:
 
@@ -538,6 +538,7 @@ public class Evaluator : IEvaluator
 {
     internal class Builtin { internal readonly Closure Closure; internal Builtin(Closure closure) => Closure = closure; }
     protected static readonly object[] Empty = new object[0];
+    protected static string Whatever() => $"__{Guid.NewGuid():N}__";
     protected static object Clone(object expression) => expression is object[]? ((object[])expression).Select(value => Clone(value)).ToArray() : expression;
     protected static object Eval(IEnvironment environment, object expression)
     {
@@ -548,7 +549,7 @@ public class Evaluator : IEvaluator
             Symbol symbol;
             if (1 < list.Length)
             {
-                int ip;
+            int ip;
                 if ((symbol = list[0] as Symbol) != null && symbol == Symbol.Quote) return list[1];
                 if ((list[ip = 0] is Builtin) || (list[ip = 1] is Builtin)) return ((Builtin)list[ip]).Closure(environment, list);
                 if (((symbol = list[ip = 1] as Symbol) != null && symbol.Index < Symbol.This.Index) || ((symbol = list[ip = 0] as Symbol) != null && symbol.Index < Symbol.This.Index)) return ((Builtin)(list[ip] = new Builtin((Closure)Eval(environment, symbol)))).Closure(environment, list);
@@ -570,17 +571,10 @@ public class Evaluator : IEvaluator
         }
         return expression is Symbol ? (environment.TryGet((Symbol)expression, out var value) ? value : Symbol.Unknown) : expression;
     }
-    protected Evaluator(ISymbolProvider symbolProvider) =>
-        SymbolProvider = symbolProvider ?? throw new ArgumentNullException(nameof(symbolProvider), "cannot be null");
-    protected virtual IEnvironment NewScope(IEnvironment parent, ISymbolProvider symbolProvider = null) =>
-        new Environment(parent, symbolProvider);
-    protected virtual IEnvironment Builtins(IEnvironment global, object expression) =>
-        global.Set(Symbol.Let, (Closure)Definition).Set(Symbol.Lambda, (Closure)Abstraction);
-    protected virtual object Tokenize(object context, string input, out int matched, ref int offset)
-    {
-        matched = 0;
-        return Symbol.EOF;
-    }
+    protected Evaluator(ISymbolProvider symbolProvider) => SymbolProvider = symbolProvider ?? throw new ArgumentNullException(nameof(symbolProvider), "cannot be null");
+    protected virtual IEnvironment NewScope(IEnvironment parent, ISymbolProvider symbolProvider = null) => new Environment(parent, symbolProvider);
+    protected virtual IEnvironment Builtins(IEnvironment global, object expression) => global.Set(Symbol.Let, (Closure)Definition).Set(Symbol.Lambda, (Closure)Abstraction);
+    protected virtual object Tokenize(object context, string input, out int matched, ref int offset) { matched = 0; return Symbol.EOF; }
     protected object ParseSExpression(object context, string input, object lookAhead, int matched, ref int offset)
     {
         object value = lookAhead;
@@ -606,8 +600,6 @@ public class Evaluator : IEvaluator
         var offset = 0; var parse = ParseSExpression(environment = environment ?? NewScope(null, SymbolProvider), input, Tokenize(environment, input, out var matched, ref offset), matched, ref offset);
         return Symbol.EOF.Equals(Tokenize(environment, input, out var ignored, ref offset)) ? parse : throw new Exception($"unexpected '{input[offset]}' at {offset}");
     }
-    protected virtual object Params(IEnvironment environment, params object[] args) => Symbol.Unknown;
-    protected virtual object This(IEnvironment environment, params object[] args) => Symbol.Unknown;
     protected virtual object Definition(IEnvironment environment, params object[] args)
     {
         var scope = ((object[])args[1]).Cast<object[]>().Aggregate(NewScope(environment), (local, let) => local.Set((Symbol)let[0], Eval(local, let[1])));
@@ -625,7 +617,7 @@ public class Evaluator : IEvaluator
                 var named = varargs < 0 ? formals.Length : varargs;
                 for (var i = 0; i < named; i++) local.Set((Symbol)formals[i], i < @params.Length ? @params[i] : Symbol.Unknown);
                 if (0 <= varargs) local.Set((Symbol)((object[])formals[varargs])[0], varargs < @params.Length ? @params.Skip(varargs).ToArray() : (object)Symbol.Unknown);
-                local.Set(Symbol.This, This(local, @this)).Set(Symbol.Params, Params(local, new[] { (object)@params }));
+                local.Set(Symbol.This, @this).Set(Symbol.Params, @params);
                 return Eval(local, args[2]);
             };
     }
@@ -635,8 +627,8 @@ public class Evaluator : IEvaluator
         new KeyValuePair<string, Symbol>("(", Symbol.Open),
         new KeyValuePair<string, Symbol>(")", Symbol.Close),
         new KeyValuePair<string, Symbol>("`", Symbol.Quote),
-        new KeyValuePair<string, Symbol>($"__{Guid.NewGuid():N}__", Symbol.Params),
-        new KeyValuePair<string, Symbol>($"__{Guid.NewGuid():N}__", Symbol.This),
+        new KeyValuePair<string, Symbol>(Whatever(), Symbol.Params),
+        new KeyValuePair<string, Symbol>(Whatever(), Symbol.This),
         new KeyValuePair<string, Symbol>("let", Symbol.Let),
         new KeyValuePair<string, Symbol>("=>", Symbol.Lambda)
     };
@@ -646,10 +638,8 @@ public class Evaluator : IEvaluator
     public string ToString(object value) => (string)Serialize(typeof(string), value);
     public object Quote(object expression) => new[] { Symbol.Quote, expression };
     public object Evaluate(string input) => Evaluate(null, input);
-    public object Evaluate(IEnvironment environment, string input) =>
-        Evaluate(environment = NewScope(environment, SymbolProvider), Parse(environment, input));
-    public object Evaluate(IEnvironment environment, object expression) =>
-        Eval(Builtins(environment ?? throw new ArgumentNullException(nameof(environment), "cannot be null"), Clone(expression)), expression);
+    public object Evaluate(IEnvironment environment, string input) => Evaluate(environment = NewScope(environment, SymbolProvider), Parse(environment, input));
+    public object Evaluate(IEnvironment environment, object expression) => Eval(Builtins(environment ?? throw new ArgumentNullException(nameof(environment), "cannot be null"), Clone(expression)), expression);
     public ISymbolProvider SymbolProvider { get; }
 }
 ```
@@ -718,7 +708,7 @@ namespace System.Text.Languages
 }
 ```
 
-### Runtime.cs (150 lines)
+### Runtime.cs (149 lines)
 ```
 using System;
 using System.Collections.Generic;
@@ -764,6 +754,7 @@ namespace System.Text.Languages.Runtime
     {
         internal class Builtin { internal readonly Closure Closure; internal Builtin(Closure closure) => Closure = closure; }
         protected static readonly object[] Empty = new object[0];
+        protected static string Whatever() => $"__{Guid.NewGuid():N}__";
         protected static object Clone(object expression) => expression is object[]? ((object[])expression).Select(value => Clone(value)).ToArray() : expression;
         protected static object Eval(IEnvironment environment, object expression)
         {
@@ -825,8 +816,6 @@ namespace System.Text.Languages.Runtime
             var offset = 0; var parse = ParseSExpression(environment = environment ?? NewScope(null, SymbolProvider), input, Tokenize(environment, input, out var matched, ref offset), matched, ref offset);
             return Symbol.EOF.Equals(Tokenize(environment, input, out var ignored, ref offset)) ? parse : throw new Exception($"unexpected '{input[offset]}' at {offset}");
         }
-        protected virtual object Params(IEnvironment environment, params object[] args) => Symbol.Unknown;
-        protected virtual object This(IEnvironment environment, params object[] args) => Symbol.Unknown;
         protected virtual object Definition(IEnvironment environment, params object[] args)
         {
             var scope = ((object[])args[1]).Cast<object[]>().Aggregate(NewScope(environment), (local, let) => local.Set((Symbol)let[0], Eval(local, let[1])));
@@ -844,7 +833,7 @@ namespace System.Text.Languages.Runtime
                     var named = varargs < 0 ? formals.Length : varargs;
                     for (var i = 0; i < named; i++) local.Set((Symbol)formals[i], i < @params.Length ? @params[i] : Symbol.Unknown);
                     if (0 <= varargs) local.Set((Symbol)((object[])formals[varargs])[0], varargs < @params.Length ? @params.Skip(varargs).ToArray() : (object)Symbol.Unknown);
-                    local.Set(Symbol.This, This(local, @this)).Set(Symbol.Params, Params(local, new[] { (object)@params }));
+                    local.Set(Symbol.This, @this).Set(Symbol.Params, @params);
                     return Eval(local, args[2]);
                 };
         }
@@ -854,8 +843,8 @@ namespace System.Text.Languages.Runtime
             new KeyValuePair<string, Symbol>("(", Symbol.Open),
             new KeyValuePair<string, Symbol>(")", Symbol.Close),
             new KeyValuePair<string, Symbol>("`", Symbol.Quote),
-            new KeyValuePair<string, Symbol>($"__{Guid.NewGuid():N}__", Symbol.Params),
-            new KeyValuePair<string, Symbol>($"__{Guid.NewGuid():N}__", Symbol.This),
+            new KeyValuePair<string, Symbol>(Whatever(), Symbol.Params),
+            new KeyValuePair<string, Symbol>(Whatever(), Symbol.This),
             new KeyValuePair<string, Symbol>("let", Symbol.Let),
             new KeyValuePair<string, Symbol>("=>", Symbol.Lambda)
         };
