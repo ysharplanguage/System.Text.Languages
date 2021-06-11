@@ -126,6 +126,7 @@ The **`ISymbolProvider`** contract's rationale is as follows:
 
 The overall practical utility of this **`ISymbolProvider`** contract's rationale will appear more clearly [when we derive our first interpreter](#deriving-a-sample-interpreter) from the default implementation of **`IEvaluator`** (ie, class [**`Evaluator`**](#class-evaluator)).
 
+#### (The complete ISymbolProvider contract)
 ```
 public interface ISymbolProvider
 {
@@ -171,6 +172,7 @@ Note that unlike the stakes at hands for an implementation of **`ISymbolProvider
 Finally, the single most fundamental semantic assumption (and actual hard requirement) for an implementation of **`IEnvironment`** should be that any child environment ***must*** be constructed to use the same run-time implementation of **`ISymbolProvider`** as is already in use by its parent,
 most likely the very same implementation which was used to construct the initial global environment while initializing the ambient **`ILanguage`** or **`IEvaluator`** implementation.
 
+#### (The complete IEnvironment contract)
 ```
 public interface IEnvironment
 {
@@ -407,10 +409,10 @@ Once lexing/tokenizing and parsing are taken care of, one can start thinking abo
 
 Remember that design and implementation choices around builtin symbols will generally have to support at least two distinct phases:
 
-1. What are those symbols, their respective literals, and how do we make an implementation of **`ISymbolProvider`** know about them, to start with?
-2. Once the symbols are known to the **`ISymbolProvider`** injected into the evaluator, how do we make them available to this or that implementation of **`IEnvironment`**, and under which conditions (or, "binding rules") exactly?
+1. What are those symbols, their respective literals, and how do we make an implementation of [**`ISymbolProvider`**](#interface-isymbolprovider) know about them, to start with?
+2. Once the symbols are known to the **`ISymbolProvider`** injected into the evaluator, how do we make them available to this or that implementation of [**`IEnvironment`**](#interface-ienvironment), and under which conditions (or, "binding rules") exactly?
 
-**`Evaluator`** provides a simple pattern to follow, covering both (1) and (2):
+The [**`Evaluator`** base class](#the-complete-evaluator-base-class) supports a simple pattern that one can follow, to cover both (1) and (2):
 
 ```
 using System.Text.Languages;
@@ -536,7 +538,7 @@ Which can then make writing this sort of tests possible:
 
 ```
 
-#### (The complete Evaluator base class, in 107 lines)
+#### (The complete Evaluator base class)
 ```
 public class Evaluator : IEvaluator
 {
