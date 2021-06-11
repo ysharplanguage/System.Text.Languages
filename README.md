@@ -403,141 +403,6 @@ the **`object Parse(object context, string input)`** method does not actually ca
 
 This offers the implementer the flexibility of providing, if so wished, a completely different parsing algorithm - through that **`object Parse(IEnvironment environment, string input)`** intermediary - which would be meant to process any other language, while still relying on **`Tokenize`**'s lexing facility and the rest of **`Evaluator`**'s implementation to interpret an S-expression intermediate form.
 
-## Deriving a sample interpreter (beyond parsing, where and how to implement semantic bindings?)
-
-Once lexing/tokenizing and parsing are taken care of, one can start thinking about what is left to do to support the desired run-time evaluation semantics, and to begin with, how to bind this or that particular builtin symbol (devised during the language design phase) to its specific semantic value (be it a constant, a builtin language operator, or anything else really).
-
-Remember that design and implementation choices around builtin symbols will generally have to support at least two distinct phases:
-
-1. What are those symbols, their respective literals, and how do we make an implementation of [**`ISymbolProvider`**](#interface-isymbolprovider) know about them, to start with?
-2. Once the symbols are known to the **`ISymbolProvider`** injected into the evaluator, how do we make them available to this or that implementation of [**`IEnvironment`**](#interface-ienvironment), and under which conditions (or, "binding rules") exactly?
-
-The [**`Evaluator`** base class](#the-complete-evaluator-base-class) supports a simple pattern that one can follow, to cover both (1) and (2):
-
-```
-using System.Text.Languages;
-using System.Text.Languages.Runtime;
-
-public class MyLISP : Evaluator
-{
-    // Phase (1)
-    //
-    // define and cache our new builtins once and for all:
-    public readonly Symbol NIL, PostalServiceActSigner, PostalServiceActYear;
-
-    public MyLISP(ISymbolProvider symbolProvider = null) : base(symbolProvider ?? new DefaultSymbolProvider(DefaultCore)) =>
-        SymbolProvider
-        // literals <=> symbols mappings:
-        .Include("NIL", out NIL, true)
-        .Include("PSAS", out PostalServiceActSigner, true)
-        .Include("PSAY", out PostalServiceActYear, true);
-
-    // Phase (2)
-    //
-    // bind our new builtins in the global environment, if so desired
-    protected override IEnvironment Builtins(IEnvironment global, object expression) =>
-        !global.Contains(PostalServiceActYear) ? // Last known builtin not yet bound to its semantic value?
-        base.Builtins(global, expression)
-        .Set(PostalServiceActSigner, "George Washington")
-        .Set(PostalServiceActYear, 1792)
-        :
-        global; // Already all set up
-
-    // Last but not least, a very naive (but sufficient) tokenizer for the job
-    protected override object Tokenize(object context, string input, out int matched, ref int offset)
-    {
-        var symbolProvider = ((IEnvironment)context).SymbolProvider;
-
-        var OpenLiteral = symbolProvider.NameOf(Symbol.Open); // "("
-        var CloseLiteral = symbolProvider.NameOf(Symbol.Close); // ")"
-        var NILLiteral = symbolProvider.NameOf(NIL); // "NIL"
-        var PSASLiteral = symbolProvider.NameOf(PostalServiceActSigner); // "PSAS"
-        var PSAYLiteral = symbolProvider.NameOf(PostalServiceActYear); // "PSAY"
-
-        // Silently eat any leading whitespace:
-        while (offset < input.Length && char.IsWhiteSpace(input[offset])) offset++;
-
-        if (offset < input.Length)
-        {
-            matched = OpenLiteral.Length;
-            if (offset <= input.Length - matched && input.Substring(offset, matched) == OpenLiteral)
-            {
-                return Symbol.Open;
-            }
-            matched = CloseLiteral.Length;
-            if (offset <= input.Length - matched && input.Substring(offset, matched) == CloseLiteral)
-            {
-                return Symbol.Close;
-            }
-            matched = NILLiteral.Length;
-            if (offset <= input.Length - matched && input.Substring(offset, matched) == NILLiteral)
-            {
-                // The semantic decision about NIL can be made directly in the tokenizer,
-                // not using a binding that'd be held in the environment (just for example):
-                return null;
-            }
-            matched = PSASLiteral.Length;
-            if (offset <= input.Length - matched && input.Substring(offset, matched) == PSASLiteral)
-            {
-                return PostalServiceActSigner;
-            }
-            matched = PSAYLiteral.Length;
-            if (offset <= input.Length - matched && input.Substring(offset, matched) == PSAYLiteral)
-            {
-                return PostalServiceActYear;
-            }
-            else
-            {
-                matched = 0;
-                return Symbol.Unknown;
-            }
-        }
-        matched = 0;
-        return Symbol.EOF;
-    }
-}
-```
-
-Which can then make writing this sort of tests possible:
-
-```
-    var mylisp = new MyLISP();
-    var input1 = "  ( NIL   NIL       PSAY   PSAS  )  ";
-    var input2 = " (   NIL     NIL   PSAS    NIL    PSAY  )  ";
-
-    var exp1 = (object[])mylisp.Parse(input1);
-    System.Diagnostics.Debug.Assert(exp1
-        .SequenceEqual
-        (
-            new object[]
-            {
-                null,
-                null,
-                mylisp.PostalServiceActYear,
-                mylisp.PostalServiceActSigner
-            }
-        ));
-    var val1 = mylisp.Evaluate(input1);
-    System.Diagnostics.Debug.Assert(val1 as string == "George Washington");
-
-    var exp2 = (object[])mylisp.Parse(input2);
-    System.Diagnostics.Debug.Assert(exp2
-        .SequenceEqual
-        (
-            new object[]
-            {
-                null,
-                null,
-                mylisp.PostalServiceActSigner,
-                null,
-                mylisp.PostalServiceActYear
-            }
-        ));
-    var val2 = mylisp.Evaluate(input2);
-    System.Diagnostics.Debug.Assert((int)val2 == 1792);
-
-```
-
 #### (The complete Evaluator base class)
 ```
 public class Evaluator : IEvaluator
@@ -647,6 +512,138 @@ public class Evaluator : IEvaluator
     public object Evaluate(IEnvironment environment, object expression) => Eval(Builtins(environment ?? throw new ArgumentNullException(nameof(environment), "cannot be null"), Clone(expression)), expression);
     public ISymbolProvider SymbolProvider { get; }
 }
+```
+
+## Deriving a sample interpreter (beyond parsing, where and how to implement semantic bindings?)
+
+Once lexing/tokenizing and parsing are taken care of, one can start thinking about what is left to do to support the desired run-time evaluation semantics, and to begin with, how to bind this or that particular builtin symbol (devised during the language design phase) to its specific semantic value (be it a constant, a builtin language operator, or anything else really).
+
+Remember that design and implementation choices around builtin symbols will generally have to support at least two distinct phases:
+
+1. What are those symbols, their respective literals, and how do we make an implementation of [**`ISymbolProvider`**](#interface-isymbolprovider) know about them, to start with?
+2. Once the symbols are known to the **`ISymbolProvider`** injected into the evaluator, how do we make them available to this or that implementation of [**`IEnvironment`**](#interface-ienvironment), and under which conditions (or, "binding rules") exactly?
+
+The [**`Evaluator`** base class](#the-complete-evaluator-base-class) supports a simple pattern that one can follow, to cover both (1) and (2):
+```
+using System.Text.Languages;
+using System.Text.Languages.Runtime;
+
+public class MyLISP : Evaluator
+{
+    // Phase (1)
+    //
+    // define and cache our new builtins once and for all:
+    public readonly Symbol NIL, PostalServiceActSigner, PostalServiceActYear;
+
+    public MyLISP(ISymbolProvider symbolProvider = null) : base(symbolProvider ?? new DefaultSymbolProvider(DefaultCore)) =>
+        SymbolProvider
+        // literals <=> symbols mappings:
+        .Include("NIL", out NIL, true)
+        .Include("PSAS", out PostalServiceActSigner, true)
+        .Include("PSAY", out PostalServiceActYear, true);
+
+    // Phase (2)
+    //
+    // bind our new builtins in the global environment, if so desired
+    protected override IEnvironment Builtins(IEnvironment global, object expression) =>
+        !global.Contains(PostalServiceActYear) ? // Last known builtin not yet bound to its semantic value?
+        base.Builtins(global, expression)
+        .Set(PostalServiceActSigner, "George Washington")
+        .Set(PostalServiceActYear, 1792)
+        :
+        global; // Already all set up
+
+    // Last but not least, a very naive (but sufficient) tokenizer for the job
+    protected override object Tokenize(object context, string input, out int matched, ref int offset)
+    {
+        var symbolProvider = ((IEnvironment)context).SymbolProvider;
+
+        var OpenLiteral = symbolProvider.NameOf(Symbol.Open); // "("
+        var CloseLiteral = symbolProvider.NameOf(Symbol.Close); // ")"
+        var NILLiteral = symbolProvider.NameOf(NIL); // "NIL"
+        var PSASLiteral = symbolProvider.NameOf(PostalServiceActSigner); // "PSAS"
+        var PSAYLiteral = symbolProvider.NameOf(PostalServiceActYear); // "PSAY"
+
+        // Silently eat any leading whitespace:
+        while (offset < input.Length && char.IsWhiteSpace(input[offset])) offset++;
+
+        if (offset < input.Length)
+        {
+            matched = OpenLiteral.Length;
+            if (offset <= input.Length - matched && input.Substring(offset, matched) == OpenLiteral)
+            {
+                return Symbol.Open;
+            }
+            matched = CloseLiteral.Length;
+            if (offset <= input.Length - matched && input.Substring(offset, matched) == CloseLiteral)
+            {
+                return Symbol.Close;
+            }
+            matched = NILLiteral.Length;
+            if (offset <= input.Length - matched && input.Substring(offset, matched) == NILLiteral)
+            {
+                // The semantic decision about NIL can be made directly in the tokenizer,
+                // not using a binding that'd be held in the environment (just for example):
+                return null;
+            }
+            matched = PSASLiteral.Length;
+            if (offset <= input.Length - matched && input.Substring(offset, matched) == PSASLiteral)
+            {
+                return PostalServiceActSigner;
+            }
+            matched = PSAYLiteral.Length;
+            if (offset <= input.Length - matched && input.Substring(offset, matched) == PSAYLiteral)
+            {
+                return PostalServiceActYear;
+            }
+            else
+            {
+                matched = 0;
+                return Symbol.Unknown;
+            }
+        }
+        matched = 0;
+        return Symbol.EOF;
+    }
+}
+```
+
+Which can then make writing this sort of tests possible:
+```
+    var mylisp = new MyLISP();
+    var input1 = "  ( NIL   NIL       PSAY   PSAS  )  ";
+    var input2 = " (   NIL     NIL   PSAS    NIL    PSAY  )  ";
+
+    var exp1 = (object[])mylisp.Parse(input1);
+    System.Diagnostics.Debug.Assert(exp1
+        .SequenceEqual
+        (
+            new object[]
+            {
+                null,
+                null,
+                mylisp.PostalServiceActYear,
+                mylisp.PostalServiceActSigner
+            }
+        ));
+    var val1 = mylisp.Evaluate(input1);
+    System.Diagnostics.Debug.Assert(val1 as string == "George Washington");
+
+    var exp2 = (object[])mylisp.Parse(input2);
+    System.Diagnostics.Debug.Assert(exp2
+        .SequenceEqual
+        (
+            new object[]
+            {
+                null,
+                null,
+                mylisp.PostalServiceActSigner,
+                null,
+                mylisp.PostalServiceActYear
+            }
+        ));
+    var val2 = mylisp.Evaluate(input2);
+    System.Diagnostics.Debug.Assert((int)val2 == 1792);
 ```
 
 ## A more concrete example
