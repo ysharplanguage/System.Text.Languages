@@ -401,7 +401,7 @@ This offers the implementer the flexibility of providing, if so wished, a comple
 
 ## Deriving a sample interpreter (beyond parsing, where and how to implement semantic bindings?)
 
-After lexing and parsing are taken care of, one will soon start thinking about what is left to do to support the desired run-time evaluation semantics, and to begin with, how to bind this or that particular builtin symbol (devised during the language design phase) to its specific semantic value (be it a constant, a builtin language operator, or anything else really).
+Once lexing/tokenizing and parsing are taken care of, one can start thinking about what is left to do to support the desired run-time evaluation semantics, and to begin with, how to bind this or that particular builtin symbol (devised during the language design phase) to its specific semantic value (be it a constant, a builtin language operator, or anything else really).
 
 Remember that design and implementation choices around builtin symbols will generally have to support at least two distinct phases:
 
