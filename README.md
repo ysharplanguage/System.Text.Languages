@@ -194,6 +194,7 @@ Its rationale is as follows:
 
 But we will see that a specific implementation of the [**`IEvaluator`**](#interface-ievaluator) contract, which derives from **`ILanguage`**, can also afford making a few more assumptions, which are meaningful especially from the standpoint of the implementer of an interpreter.
 
+#### (The complete ILanguage contract)
 ```
 public interface ILanguage
 {
@@ -258,6 +259,7 @@ With these design choices and not-too-limited representational flexibility in mi
   3. finally, rely on the implementation of the **`object Evaluate(IEnvironment environment, object expression)`** method to perform the sort of evaluation that has been pertaining for long already to LISP's **`eval`**
 - the **`ISymbolProvider SymbolProvider`** property is simply required to return the necessarily non-null [**`ISymbolProvider`**](#interface-isymbolprovider) which was injected at construction time of the current **`IEvaluator`** in the first place
 
+#### (The complete IEvaluator contract)
 ```
 public interface IEvaluator : ILanguage
 {
@@ -534,6 +536,7 @@ Which can then make writing this sort of tests possible:
 
 ```
 
+#### (The complete Evaluator base class, in 107 lines)
 ```
 public class Evaluator : IEvaluator
 {
