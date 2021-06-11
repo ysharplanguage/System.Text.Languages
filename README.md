@@ -2,7 +2,7 @@
 May 31, 2021
 
 ## An experiment in minimalism for interpreters of LISP-ish languages
-(in about 200 lines of C#)
+(in less than 200 lines of C#)
 
 ***
 
@@ -19,11 +19,12 @@ May 31, 2021
   - [DefaultSymbolProvider](#class-defaultsymbolprovider) class
   - [Environment](#class-environment) class
   - [Evaluator](#class-evaluator) class
-- [Deriving a sample interpreter](#deriving-a-sample-interpreter)
+- [Deriving a sample interpreter (beyond parsing, where and how to implement semantic bindings?)](#deriving-a-sample-interpreter-beyond-parsing-where-and-how-to-implement-semantic-bindings)
+- [A more concrete example](#a-more-concrete-example)
 - [A more advanced example](#a-more-advanced-example)
 - [Complete sources](#complete-sources)
-  - [Namespace.cs](#namespacecs-52-lines)
-  - [Runtime.cs](#runtimecs-149-lines)
+  - [Namespace.cs](#namespacecs-51-lines)
+  - [Runtime.cs](#runtimecs-148-lines)
 - [License and disclaimer](#license-and-disclaimer)
 - [Contact info](#contact-info)
 
@@ -31,7 +32,7 @@ May 31, 2021
 
 ## API
 
-Complete source: [Namespace.cs](#namespacecs-52-lines)
+Complete source: [Namespace.cs](#namespacecs-51-lines)
 
 The API consists in:
 
@@ -189,8 +190,7 @@ Its rationale is as follows:
 
 - a common "pre-processing" need which naturally arises from interpreting or compiling a textual language **`input`** phrase is to parse it first into another intermediate form, prior to further processing; hence, the **`object Parse(string input)`** method
 - since it is contemplated that the client may also wish, in some cases, to provide contextual, or "out-of-band" (eg, configuration) information for the parsing operation to execute as expected, the contract makes for this provision through the **`object Parse(object context, string input)`** method overload, with its additional **`context`** parameter
-- as a dual of the previous, a common "post-processing" need which also naturally arises from holding a known intermediate form (**`value`**) of what possibly once was given as a textual language input phrase, or the result of an evaluation thereof, is to turn it back into a serializable representation (**`type`**); hence the **`object Serialize(Type type, object value)`** method
-- finally, turning such a value back into a textual form more specifically, say, through the **`string ToString(object value)`** method, can also quite naturally be seen (and implemented accordingly) as just a special case of the serialization process, where the first (**`type`**) argument to **`Serialize`** (ie, the serialization target type) happens to be implied and equal to **`typeof(string)`** - thus making **`ToString`** more of a convenient, specialized helper around **`Serialize`** than a truly distinct facility
+- as a dual of the previous, a common "post-processing" need which also naturally arises from holding a known intermediate form (**`value`**) of what possibly once was given as a textual language input phrase, or the result of an evaluation thereof, is to turn it back into a serializable representation (**`type`**); hence the **`object Yield(Type type, object value)`** method
 
 But we will see that a specific implementation of the [**`IEvaluator`**](#interface-ievaluator) contract, which derives from **`ILanguage`**, can also afford making a few more assumptions, which are meaningful especially from the standpoint of the implementer of an interpreter.
 
@@ -199,8 +199,7 @@ public interface ILanguage
 {
     object Parse(string input);
     object Parse(object context, string input);
-    object Serialize(Type type, object value);
-    string ToString(object value);
+    object Yield(Type type, object value);
 }
 ```
 
@@ -279,7 +278,7 @@ public delegate object Closure(IEnvironment environment, params object[] args);
 
 ## Base and default implementations
 
-Complete source: [Runtime.cs](#runtimecs-149-lines)
+Complete source: [Runtime.cs](#runtimecs-148-lines)
 
 The base and default implementations consist in:
 
@@ -394,11 +393,13 @@ Thus, assuming the implementation of **`Tokenize`** can deal properly with (opti
 
 **`( <atom0> <atom1> ( ) <atom3> ( <atom40> <atom41> ( ) <atom43> ) <atom5> )`**
 
-There is a barely veiled perk to our **`Evaluator`**'s internals:
+But there is a barely veiled perk to our **`Evaluator`**'s internals:
 
 the **`object Parse(object context, string input)`** method does not actually call directly into the handy **`object ParseSExpression(...)`**, instead it calls into the (protected, virtual) **`object Parse(IEnvironment environment, string input)`** ***which then*** delegates the S-expressions parsing work to **`object ParseSExpression(...)`**.
 
 This offers the implementer the flexibility of providing, if so wished, a completely different parsing algorithm - through that **`object Parse(IEnvironment environment, string input)`** intermediary - which would be meant to process any other language, while still relying on **`Tokenize`**'s lexing facility and the rest of **`Evaluator`**'s implementation to interpret an S-expression intermediate form.
+
+## Deriving a sample interpreter (beyond parsing, where and how to implement semantic bindings?)
 
 After lexing and parsing are taken care of, one will soon start thinking about what is left to do to support the desired run-time evaluation semantics, and to begin with, how to bind this or that particular builtin symbol (devised during the language design phase) to its specific semantic value (be it a constant, a builtin language operator, or anything else really).
 
@@ -634,8 +635,7 @@ public class Evaluator : IEvaluator
     };
     public object Parse(string input) => Parse(null, input);
     public object Parse(object context, string input) => Parse(context as IEnvironment, input);
-    public virtual object Serialize(Type type, object value) => throw new NotImplementedException();
-    public string ToString(object value) => (string)Serialize(typeof(string), value);
+    public virtual object Yield(Type type, object value) => throw new NotImplementedException();
     public object Quote(object expression) => new[] { Symbol.Quote, expression };
     public object Evaluate(string input) => Evaluate(null, input);
     public object Evaluate(IEnvironment environment, string input) => Evaluate(environment = NewScope(environment, SymbolProvider), Parse(environment, input));
@@ -644,7 +644,7 @@ public class Evaluator : IEvaluator
 }
 ```
 
-## Deriving a sample interpreter
+## A more concrete example
 TBC...
 
 ## A more advanced example
@@ -652,7 +652,7 @@ TBC...
 
 ## Complete sources
 
-### Namespace.cs (52 lines)
+### Namespace.cs (51 lines)
 ```
 using System;
 using System.Collections.Generic;
@@ -691,8 +691,7 @@ namespace System.Text.Languages
     {
         object Parse(string input);
         object Parse(object context, string input);
-        object Serialize(Type type, object value);
-        string ToString(object value);
+        object Yield(Type type, object value);
     }
 
     public interface IEvaluator : ILanguage
@@ -708,7 +707,7 @@ namespace System.Text.Languages
 }
 ```
 
-### Runtime.cs (149 lines)
+### Runtime.cs (148 lines)
 ```
 using System;
 using System.Collections.Generic;
@@ -850,8 +849,7 @@ namespace System.Text.Languages.Runtime
         };
         public object Parse(string input) => Parse(null, input);
         public object Parse(object context, string input) => Parse(context as IEnvironment, input);
-        public virtual object Serialize(Type type, object value) => throw new NotImplementedException();
-        public string ToString(object value) => (string)Serialize(typeof(string), value);
+        public virtual object Yield(Type type, object value) => throw new NotImplementedException();
         public object Quote(object expression) => new[] { Symbol.Quote, expression };
         public object Evaluate(string input) => Evaluate(null, input);
         public object Evaluate(IEnvironment environment, string input) => Evaluate(environment = NewScope(environment, SymbolProvider), Parse(environment, input));
