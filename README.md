@@ -528,14 +528,14 @@ The [**`Evaluator`** base class](#the-complete-evaluator-base-class) supports a 
 using System.Text.Languages;
 using System.Text.Languages.Runtime;
 
-public class MyLISP : Evaluator
+public class MyContrivedEvaluator : Evaluator
 {
     // Phase (1)
     //
     // define and cache our new builtins once and for all:
     public readonly Symbol NIL, PostalServiceActSigner, PostalServiceActYear;
 
-    public MyLISP(ISymbolProvider symbolProvider = null) : base(symbolProvider ?? new DefaultSymbolProvider(DefaultCore)) =>
+    public MyContrivedEvaluator(ISymbolProvider symbolProvider = null) : base(symbolProvider ?? new DefaultSymbolProvider(DefaultCore)) =>
         SymbolProvider
         // literals <=> symbols mappings:
         .Include("NIL", out NIL, true)
@@ -610,11 +610,11 @@ public class MyLISP : Evaluator
 
 Which can then make writing this sort of tests possible:
 ```
-    var mylisp = new MyLISP();
+    var evaluator = new MyContrivedEvaluator();
     var input1 = "  ( NIL   NIL       PSAY   PSAS  )  ";
     var input2 = " (   NIL     NIL   PSAS    NIL    PSAY  )  ";
 
-    var exp1 = (object[])mylisp.Parse(input1);
+    var exp1 = (object[])evaluator.Parse(input1);
     System.Diagnostics.Debug.Assert(exp1
         .SequenceEqual
         (
@@ -622,14 +622,14 @@ Which can then make writing this sort of tests possible:
             {
                 null,
                 null,
-                mylisp.PostalServiceActYear,
-                mylisp.PostalServiceActSigner
+                evaluator.PostalServiceActYear,
+                evaluator.PostalServiceActSigner
             }
         ));
-    var val1 = mylisp.Evaluate(input1);
+    var val1 = evaluator.Evaluate(input1);
     System.Diagnostics.Debug.Assert(val1 as string == "George Washington");
 
-    var exp2 = (object[])mylisp.Parse(input2);
+    var exp2 = (object[])evaluator.Parse(input2);
     System.Diagnostics.Debug.Assert(exp2
         .SequenceEqual
         (
@@ -637,12 +637,12 @@ Which can then make writing this sort of tests possible:
             {
                 null,
                 null,
-                mylisp.PostalServiceActSigner,
+                evaluator.PostalServiceActSigner,
                 null,
-                mylisp.PostalServiceActYear
+                evaluator.PostalServiceActYear
             }
         ));
-    var val2 = mylisp.Evaluate(input2);
+    var val2 = evaluator.Evaluate(input2);
     System.Diagnostics.Debug.Assert((int)val2 == 1792);
 ```
 
