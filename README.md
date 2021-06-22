@@ -23,7 +23,7 @@ May 31, 2021
 - [A more concrete example](#a-more-concrete-example)
 - [A more advanced example](#a-more-advanced-example)
 - [Complete sources](#complete-sources)
-  - [Namespace.cs](#namespacecs-51-lines)
+  - [Namespace.cs](#namespacecs-50-lines)
   - [Runtime.cs](#runtimecs-148-lines)
 - [License and disclaimer](#license-and-disclaimer)
 - [Contact info](#contact-info)
@@ -32,7 +32,7 @@ May 31, 2021
 
 ## API
 
-Complete source: [Namespace.cs](#namespacecs-51-lines)
+Complete source: [Namespace.cs](#namespacecs-50-lines)
 
 The API consists in:
 
@@ -654,10 +654,9 @@ TBC...
 
 ## Complete sources
 
-### Namespace.cs (51 lines)
+### Namespace.cs (50 lines)
 ```
 using System;
-using System.Collections.Generic;
 
 namespace System.Text.Languages
 {
